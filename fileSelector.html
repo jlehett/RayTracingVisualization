@@ -1,0 +1,22 @@
+<!-- This page will allow you to select any json file to read from ./Bundles/ -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JS FileReader</title>
+</head>
+<body>
+
+    <input type="file" />
+
+    <script>
+        // This script will display a basic file chooser, then redirect to main
+        // visualizer that will render the JSON file.
+        const input = document.querySelector('input[type="file"]');
+        input.addEventListener('change', function(e) {
+            sessionStorage.setItem('JSONFile', input.files[0].name);
+            let redirectURL = 'file://' + (location.pathname.replace('fileSelector.html', 'OutlineViz.html'));
+            window.location.replace(redirectURL);
+        }, false);
+    </script>
+</body>
+</html>
