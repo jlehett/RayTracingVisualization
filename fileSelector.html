@@ -13,7 +13,7 @@
         // visualizer that will render the JSON file.
         const input = document.querySelector('input[type="file"]');
         input.addEventListener('change', function(e) {
-            sessionStorage.setItem('JSONFile', input.files[0].name);
+            sessionStorage.setItem('sceneFile', input.files[0].name);
             let redirectURL = 'file://' + (location.pathname.replace('fileSelector.html', 'OutlineViz.html'));
             window.location.replace(redirectURL);
         }, false);

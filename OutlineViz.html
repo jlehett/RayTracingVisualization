@@ -48,6 +48,7 @@
 
 		uniform mat4 modelViewMatrix;
 		uniform mat4 projectionMatrix;
+		uniform mat3 normalMatrix;
 
 		attribute vec3 position;
 		attribute vec3 normal;
@@ -56,7 +57,7 @@
 
 		void main()
 		{
-			vNormal = normal;
+			vNormal = normalize(normalMatrix*normal);
 			vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
 			gl_Position = projectionMatrix * modelViewPosition;
 		}
@@ -75,13 +76,12 @@
 		void main()
 		{
 			float difference = 0.0;
-			difference += abs(dFdx(vNormal.x));
-			difference += abs(dFdx(vNormal.y));
-			difference += abs(dFdx(vNormal.z));
-			difference += abs(dFdy(vNormal.x));
-			difference += abs(dFdy(vNormal.y));
-			difference += abs(dFdy(vNormal.z));
-			if (difference > 1.0)
+			vec3 differenceX = dFdx(vNormal);
+			vec3 differenceY = dFdy(vNormal);
+			vec3 N1 = normalize(cross(differenceX,differenceY));
+			vec3 N2 = normalize(vNormal);
+			difference = dot(N1,N2);
+			if (difference < 0.75)
 			{
 				gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 			} else {
@@ -103,7 +103,7 @@
 
     	void main()
     	{
-      		vec4 modelViewPosition = modelViewMatrix * vec4(position + normal * 0.02, 1.0);
+      		vec4 modelViewPosition = modelViewMatrix * vec4(position + normal * 0.1, 1.0);
       		gl_Position = projectionMatrix * modelViewPosition;
     	}
   	</script>
@@ -122,15 +122,18 @@
 
   	<script src="https://threejs.org/build/three.js"></script>
   	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script src="./dependencies/OBJLoader.js"></script>
 
 	<!-- MAIN JS CODE -->
 	<script>
     	"use strict";
     	let camera, scene, renderer, json, inMaterial, outMaterial, creaseMaterial;
+		let controls;
 
     	class GroupedScene {
 			// Handles rendering of rays and meshes (Aids rendering of outlined meshes)
         	constructor() {
+				// Rays
             	this.rays = new THREE.Scene();
 				// Inner mesh and outer meshes are rendered in two separate passes to give
 				// transparent effect.
@@ -162,7 +165,7 @@
             	renderer.render(this.outerMeshes, camera);
 
 				// Render the crease meshes
-				renderer.render(this.creaseMeshes, camera);
+				//renderer.render(this.creaseMeshes, camera);
         	}
 
 			getCameraTarget() {
@@ -256,41 +259,54 @@
 			});
 
 			// CAMERA
-			camera = new THREE.PerspectiveCamera( 36, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			camera = new THREE.PerspectiveCamera( 36, window.innerWidth / window.innerHeight, 0.1, 100000 );
 			camera.position.set( 0, 0, 0 );
 
 			// CAMERA CONTROLS (ORBIT CONTROLS)
-			let controls = new THREE.OrbitControls( camera, renderer.domElement );
+			controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.update();
 			controls.addEventListener('change', render);
 
 			// JSON SCENE DEFINITION
 			//new THREE.FileLoader().load("raybundle.json",function(json){console.log(json);})
 
-			// Reads JSON file from sessionStorage. If this application is run without
-			// running the file selector page, default to using a JSON file called
-			// raybundle.json inside the Bundles directory.
-			let filename = sessionStorage.getItem('JSONFile');
+			// Read file from sessionStorage. If no file, by default read './Bundes/raybundle.json'.
+			// If JSON file, use JSON scene loader. If OBJ file, use OBJ scene loader.
+			let filename = sessionStorage.getItem('sceneFile');
 			if (filename == null) {
 				filename = 'Bundles/raybundle.json';
-			} else {
+			} else if (filename.includes('.json')) {
 				filename = 'Bundles/' + filename;
+				// Using the input JSON file name, load the JSON.
+				readTextFile(filename, function(text){
+					// Load scene definnitions
+				    let myObj = JSON.parse(text);
+					//testCrease();
+				    loadRayBundles(myObj, 1.0);
+				    loadScene(myObj);
+				    // Set orbit controls center to scene center.
+				    let targetVec = scene.getCameraTarget();
+				    controls.target.set(targetVec.x, targetVec.y, targetVec.z);
+				    controls.update();
+					// Zoom camera by 3x the range of the scene's bounding box z-coords.
+				    camera.position.set( targetVec.x, targetVec.y, (scene.maxCoords.z-scene.minCoords.z)*3.0 );
+				    render();
+				});
+			} else if (filename.includes('.obj')) {
+				filename = 'OBJ/' + filename;
+				loadObj(filename);
 			}
-			// Using the input JSON file name, load the JSON.
-			readTextFile(filename, function(text){
-				// Load scene definnitions
-			    let myObj = JSON.parse(text);
-			    loadRayBundles(myObj, 1.0);
-			    loadScene(myObj);
-			    // Set orbit controls center to scene center.
-			    let targetVec = scene.getCameraTarget();
-			    controls.target.set(targetVec.x, targetVec.y, targetVec.z);
-			    controls.update();
-				// Zoom camera by 3x the range of the scene's bounding box z-coords.
-			    camera.position.set( targetVec.x, targetVec.y, (scene.maxCoords.z-scene.minCoords.z)*3.0 );
-			    render();
-			});
-    	}
+		}
+
+
+		function testCrease()
+		{
+			let geometry = new THREE.BoxGeometry(1, 1, 1);
+			let innerMesh = new THREE.Mesh(geometry, inMaterial);
+			let outerMesh = new THREE.Mesh(geometry, outMaterial);
+			let creaseMesh = new THREE.Mesh(geometry, creaseMaterial);
+			scene.addMeshes(innerMesh, outerMesh, creaseMesh);
+		}
 
     	function onWindowResize() {
       		camera.aspect = window.innerWidth / window.innerHeight;
@@ -392,12 +408,6 @@
     	}
 
     	function loadScene(json) {
-			//let geometry = new THREE.BoxGeometry(1, 1, 1);
-			//let innerMesh = new THREE.Mesh(geometry, inMaterial);
-			//let outerMesh = new THREE.Mesh(geometry, outMaterial);
-			//let creaseMesh = new THREE.Mesh(geometry, creaseMaterial);
-			//scene.addMeshes(innerMesh, outerMesh, creaseMesh);
-			//return;
 			// Load in scene definitions from JSON. Each type of mesh defined by item.type will
 			// be handled in a separate helper function.
         	json.scene.forEach(function(item, index, array) {
@@ -431,7 +441,23 @@
         	loader.load(
             	file,
             	function(object) {
-                	scene.add(object);
+					object.traverse(function(child) {
+						if (child instanceof THREE.Mesh) {
+							child.geometry.computeFaceNormals();
+							child.geometry.computeVertexNormals();
+							let innerMesh = new THREE.Mesh(child.geometry, inMaterial);
+							let outerMesh = new THREE.Mesh(child.geometry, outMaterial);
+							let creaseMesh = new THREE.Mesh(child.geometry, creaseMaterial);
+							scene.addMeshes(innerMesh, outerMesh, creaseMesh);
+						}
+					});
+					// Set orbit controls center to scene center.
+				    let targetVec = scene.getCameraTarget();
+				    controls.target.set(targetVec.x, targetVec.y, targetVec.z);
+				    controls.update();
+					// Zoom camera by 3x the range of the scene's bounding box z-coords.
+				    camera.position.set( targetVec.x, targetVec.y, (scene.maxCoords.z-scene.minCoords.z)*3.0 );
+				    render();
             	},
             	function(xhr) {
                 	console.log((xhr.loaded / xhr.total * 100) + '% loaded');
