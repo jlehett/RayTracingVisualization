@@ -103,7 +103,7 @@
 
     	void main()
     	{
-      		vec4 modelViewPosition = modelViewMatrix * vec4(position + normal * 1.0, 1.0);
+      		vec4 modelViewPosition = modelViewMatrix * vec4(position + normal * 0.01, 1.0);
       		gl_Position = projectionMatrix * modelViewPosition;
     	}
   	</script>
@@ -275,7 +275,8 @@
 			let filename = sessionStorage.getItem('sceneFile');
 			if (filename == null) {
 				filename = 'Bundles/raybundle.json';
-			} else if (filename.includes('.json')) {
+			}
+			if (filename.includes('.json')) {
 				filename = 'Bundles/' + filename;
 				// Using the input JSON file name, load the JSON.
 				readTextFile(filename, function(text){
