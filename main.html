@@ -1,0 +1,156 @@
+<html lang="en">
+	<head>
+		<title>Ray Bundles</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				margin: 0px;
+				background-color: #000000;
+				overflow: hidden;
+			}
+		</style>
+</head>
+<body>
+
+	<!-- SHADER CODE -->
+
+	<!-- Basic Vertex Shader -->
+	<script type="x-shader/x-vertex" id="vertexShaderIn">
+		precision mediump float;
+		precision mediump int;
+
+		uniform mat4 modelViewMatrix; // optional
+		uniform mat4 projectionMatrix; // optional
+
+		attribute vec3 position;
+		void main()
+		{
+			vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+			gl_Position = projectionMatrix * modelViewPosition;
+		}
+	</script>
+	<!-- Basic Fragment Shader -->
+	<script type="x-shader/x-fragment" id="fragmentShaderIn">
+		precision mediump float;
+		precision mediump int;
+
+		void main()
+		{
+			gl_FragColor = vec4(1.0);
+		}
+	</script>
+
+	<!-- Crease Vertex Shader -->
+	<script type="x-shader/x-vertex" id="vertexShaderCrease">
+		precision mediump float;
+		precision mediump int;
+
+		uniform mat4 modelViewMatrix;
+		uniform mat4 projectionMatrix;
+		uniform mat3 normalMatrix;
+
+		attribute vec3 position;
+		attribute vec3 normal;
+
+		varying vec3 vNormal;
+
+		void main()
+		{
+			vNormal = normalize(normalMatrix*normal);
+			vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+			gl_Position = projectionMatrix * modelViewPosition;
+		}
+	</script>
+	<!-- Crease Fragment Shader -->
+	<script type="x-shader/x-fragment" id="fragmentShaderCrease">
+		#ifdef GL_ES
+			#extension GL_OES_standard_derivatives:enable
+		#endif
+
+		precision mediump float;
+		precision mediump int;
+
+		varying vec3 vNormal;
+
+		void main()
+		{
+			float difference = 0.0;
+			vec3 differenceX = dFdx(vNormal);
+			vec3 differenceY = dFdy(vNormal);
+			vec3 N1 = normalize(cross(differenceX,differenceY));
+			vec3 N2 = normalize(vNormal);
+			difference = dot(N1,N2);
+			if (difference < 0.75)
+			{
+				gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+			} else {
+				discard;
+			}
+		}
+	</script>
+
+	<!-- Outline Vertex Shader -->
+	<script type="x-shader/x-vertex" id="vertexShaderOut">
+		precision mediump float;
+		precision mediump int;
+
+		uniform mat4 modelViewMatrix; // optional
+		uniform mat4 projectionMatrix; // optional
+
+		attribute vec3 position;
+		attribute vec3 normal;
+
+		void main()
+		{
+			vec4 modelViewPosition = modelViewMatrix * vec4(position + normal * 0.01, 1.0);
+			gl_Position = projectionMatrix * modelViewPosition;
+		}
+	</script>
+	<!-- Outline Fragment Shader -->
+	<script type="x-shader/x-fragment" id="fragmentShaderOut">
+		precision mediump float;
+		precision mediump int;
+
+		uniform vec3 color;
+
+		void main()
+		{
+			gl_FragColor = vec4(color,1.0);
+		}
+	</script>
+
+	<script src="https://threejs.org/build/three.js"></script>
+	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script src="./dependencies/OBJLoader.js"></script>
+	<script src="./src/MainWindow.js"></script>
+
+	<!-- MAIN JS CODE -->
+	<script>
+		"use strict";
+
+		init();
+
+		function init() {
+			// Instantiate main window
+			let mainWindow = new MainWindow();
+
+			// Read file from session storage or default to 'Bundles/raybundle.json'
+			let filename = sessionStorage.getItem('sceneFile');
+			if (filename == null) {
+				filename = 'raybundle.json';
+			}
+
+			// Load scene or obj into mainWindow
+			if (filename.includes('.json')) {
+				filename = 'Bundles/' + filename;
+				mainWindow.loadJSON(filename);
+			} else if (filename.includes('.obj')) {
+				filename = 'OBJ/' + filename;
+				mainWindow.loadObj(filename);
+			}
+		}
+
+	</script>
+</body>
+</html>

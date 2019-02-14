@@ -14,7 +14,7 @@
         const input = document.querySelector('input[type="file"]');
         input.addEventListener('change', function(e) {
             sessionStorage.setItem('sceneFile', input.files[0].name);
-            let redirectURL = 'file://' + (location.pathname.replace('fileSelector.html', 'OutlineViz.html'));
+            let redirectURL = 'file://' + (location.pathname.replace('fileSelector.html', 'main.html'));
             window.location.replace(redirectURL);
         }, false);
     </script>
