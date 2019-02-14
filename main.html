@@ -123,7 +123,12 @@
 	<script src="https://threejs.org/build/three.js"></script>
 	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 	<script src="./dependencies/OBJLoader.js"></script>
+	<script src="./dependencies/dat.gui.js"></script>
 	<script src="./src/MainWindow.js"></script>
+	<script src="./src/GUI.js"></script>
+
+	<!-- Hidden input for file loading -->
+	<input id="myInput" type="file" style="visibility:hidden"/>
 
 	<!-- MAIN JS CODE -->
 	<script>
@@ -135,20 +140,9 @@
 			// Instantiate main window
 			let mainWindow = new MainWindow();
 
-			// Read file from session storage or default to 'Bundles/raybundle.json'
-			let filename = sessionStorage.getItem('sceneFile');
-			if (filename == null) {
-				filename = 'raybundle.json';
-			}
-
-			// Load scene or obj into mainWindow
-			if (filename.includes('.json')) {
-				filename = 'Bundles/' + filename;
-				mainWindow.loadJSON(filename);
-			} else if (filename.includes('.obj')) {
-				filename = 'OBJ/' + filename;
-				mainWindow.loadObj(filename);
-			}
+			// Instantiate GUI
+			var gui = new GUI(mainWindow);
+			gui.addFileSelectButton('myInput');
 		}
 
 	</script>

@@ -259,7 +259,7 @@ class MainWindow {
         });
     }
 
-    loadObj(file) {
+    loadOBJ(file) {
         var thisInstance = this;
         // Load obj file and add object to scene's objs group.
         let loader = new THREE.OBJLoader();
