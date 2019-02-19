@@ -3,6 +3,17 @@ class GUI {
     constructor(mainWindow) {
         this.gui = new dat.GUI();
         this.mainWindow = mainWindow;
+
+        this.effectController = {
+            edgeWidth: 0.01
+        };
+
+        var thisInstance = this;
+
+        this.gui.add(this.effectController, 'edgeWidth', 0.000001, 1.0).name('Edge Width').onChange(
+            function() {
+                thisInstance.mainWindow.changeEdgeSize(thisInstance.effectController.edgeWidth);
+            });
     }
 
     addFileSelectButton(inputTag) {

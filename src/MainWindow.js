@@ -53,7 +53,8 @@ class MainWindow {
         // Outline 3D Mesh material (Used by outer mesh in outlined mesh rendering)
         this.outMaterial = new THREE.RawShaderMaterial( {
             uniforms: {
-            color: {type: "v3", value: new THREE.Vector3( 1, 0, 1 ) }
+            color: {type: "v3", value: new THREE.Vector3( 1, 0, 1 ) },
+            edgeWidth: {type: "float", value: 0.01}
             },
             side:THREE.BackSide,
             vertexShader: document.getElementById('vertexShaderOut').textContent,
@@ -305,6 +306,12 @@ class MainWindow {
             }
         }
         rawFile.send(null);
+    }
+
+    changeEdgeSize(size) {
+        // Outline 3D Mesh material (Used by outer mesh in outlined mesh rendering)
+        this.outMaterial.uniforms['edgeWidth'].value = size;
+        this.renderThis();
     }
 
 }
