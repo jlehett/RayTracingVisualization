@@ -10,6 +10,7 @@ class GUI {
 
         var thisInstance = this;
 
+        // Edge width slider
         this.gui.add(this.effectController, 'edgeWidth', 0.000001, 1.0).name('Edge Width').onChange(
             function() {
                 thisInstance.mainWindow.changeEdgeSize(thisInstance.effectController.edgeWidth);
@@ -37,4 +38,26 @@ class GUI {
         this.gui.add(params, 'loadFile').name('Load File');
     }
 
+    addCameraPlaceButton() {
+        // Place the camera in the world.
+        var mainWindow = this.mainWindow;
+        let params = {
+            placeCamera : function() {
+                mainWindow.placeCameraMesh();
+            }
+        };
+        this.gui.add(params, 'placeCamera').name('Place Camera');
+    }
+
+    addRayTraceCameraButton() {
+        // Ray trace the camera
+        var mainWindow = this.mainWindow;
+        let params = {
+            rayTraceCamera : function() {
+                mainWindow.rayTraceCamera();
+            }
+        };
+        this.gui.add(params, 'rayTraceCamera').name('Ray Trace Camera');
+    }
+    
 }

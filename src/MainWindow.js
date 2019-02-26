@@ -11,7 +11,6 @@ class MainWindow {
         this.renderer.setClearColor(0x000000, 1);
         // Camera
         this.camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 100000);
-        // Camera controls
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.update();
         var thisInstance = this;
@@ -22,12 +21,16 @@ class MainWindow {
         });
         // Rays
         this.rays = new THREE.Scene();
+        this.cameraRays = new THREE.Scene();
         // Inner mesh and outer meshes are rendered in two separate passes to give
         // transparent effect.
         this.innerMeshes = new THREE.Scene();
         this.outerMeshes = new THREE.Scene();
         // Crease mesh is rendered in yet another pass.
         this.creaseMeshes = new THREE.Scene();
+
+        // Objects for ray intersection detection
+        this.objects = [];
 
         // Involved in initial placement and zoom of the camera within the scene.
         this.minCoords = new THREE.Vector3(null, null, null);
@@ -62,6 +65,35 @@ class MainWindow {
         });
     }
 
+    rayTraceCamera() {
+        // Ray trace the current camera obj
+        this.cameraRays = new THREE.Scene();
+        let cameraMesh = this.cameraObj.getRayTracedCameraMesh(this.objects);
+        this.cameraRays.add(cameraMesh);
+        this.renderThis();
+    }
+
+    setCamera(cameraObj) {
+        // Setup camera by introducing orbit controls.
+        this.cameraObj = cameraObj;
+        this.camera = cameraObj.camera;
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.update();
+        var thisInstance = this;
+        var renderFunction = this.renderThis;
+        this.controls.addEventListener('change', function(){
+            renderFunction(thisInstance);
+        });
+    }
+
+    placeCameraMesh() {
+        // Place camera mesh wherever the camera currently is in the world.
+        this.cameraRays = new THREE.Scene();
+        let cameraMesh = this.cameraObj.getCameraMesh();
+        this.cameraRays.add(cameraMesh);
+        this.renderThis();
+    }
+
     onWindowResize() {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
@@ -69,12 +101,14 @@ class MainWindow {
     }
 
     renderThis(thisInstance=null) {
+        console.log("rendering");
         if (thisInstance == null)
             thisInstance = this;
         thisInstance.renderer.clear();
 
         // Render all rays first
-        thisInstance.renderer.render(thisInstance.rays, thisInstance.camera);
+        thisInstance.renderer.render(thisInstance.cameraRays, thisInstance.camera);
+        //thisInstance.renderer.render(thisInstance.rays, thisInstance.camera);
 
         // Render the outlined meshes using colorMask technique
         let gl = thisInstance.renderer.domElement.getContext('webgl');
@@ -178,6 +212,11 @@ class MainWindow {
             let outerMesh = new THREE.Mesh(geometry, localoutMaterial);
             let creaseMesh = new THREE.Mesh(geometry, this.creaseMaterial);
             this.addMeshes(innerMesh, outerMesh, creaseMesh);
+            // Create sphere object for ray intersection detection
+            this.objects.push(new Sphere(
+                new THREE.Vector3(object.quadruples[i], object.quadruples[i+1], object.quadruples[i+2]),
+                object.quadruples[i+3]
+            ));
         }
     }
 

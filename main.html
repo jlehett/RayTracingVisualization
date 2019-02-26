@@ -127,6 +127,8 @@
 	<script src="./dependencies/dat.gui.js"></script>
 	<script src="./src/MainWindow.js"></script>
 	<script src="./src/GUI.js"></script>
+	<script src="./src/Camera.js"></script>
+	<script src="./src/Sphere.js"></script>
 
 	<!-- Hidden input for file loading -->
 	<input id="myInput" type="file" style="visibility:hidden"/>
@@ -139,11 +141,17 @@
 
 		function init() {
 			// Instantiate main window
-			let mainWindow = new MainWindow();
+			var mainWindow = new MainWindow();
 
 			// Instantiate GUI
 			var gui = new GUI(mainWindow);
 			gui.addFileSelectButton('myInput');
+			gui.addCameraPlaceButton();
+			gui.addRayTraceCameraButton();
+
+			// Instantiate Camera
+			var camera = new Camera();
+			mainWindow.setCamera(camera);
 		}
 
 	</script>
