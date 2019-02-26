@@ -1,11 +1,11 @@
 class Camera {
 
     constructor() {
-        this.imageWidth = 10;
-        this.imageHeight = 10;
+        this.imageWidth = 5;
+        this.imageHeight = 5;
         this.fov = 36;
         this.aspect = 1.0;
-        this.nearFrustum = 1.0;
+        this.nearFrustum = 0.01;
         this.farFrustum = 10;
         this.position = new THREE.Vector3(0, 0, 0);
         this.updateCamera();
@@ -53,36 +53,76 @@ class Camera {
         return this.camera.getWorldDirection(vector).normalize();
     }
 
-    createRayTracedCameraGeometry(objects) {
-        // Create the camera geometry for the raytraced camera.
-        var cameraGeometry = new THREE.Geometry();
-        var thisInstance = this;
+    testRayTrace(objects) {
+        let rayOrigin = this.position.clone();
+        let cameraGeometry = new THREE.Geometry();
+        let thisInstance = this;
         for (let x = 0; x < this.imageWidth; x++) {
             for (let y = 0; y < this.imageHeight; y++) {
                 let scale = Math.tan(this.fov * 0.5 * Math.PI / 180.0);
-                let nearest = thisInstance.farFrustum;
-                let Px = (2.0 * (x + 0.5) / thisInstance.imageWidth - 1.0) * thisInstance.aspect * scale;
-                let Py = (1.0 - 2.0 * (y + 0.5) / thisInstance.imageHeight) * scale;
-                let rayOrigin = this.position.clone();
+                let Px = (2.0 * (x + 0.5) / this.imageWidth - 1.0) * this.aspect * scale;
+                let Py = (1.0 - 2.0 * (y + 0.5) / this.imageHeight) * scale;
                 let rayDirection = new THREE.Vector3(Px, Py, -1);
-                rayDirection.applyQuaternion(thisInstance.quaternion);
+                rayDirection.applyQuaternion(this.quaternion);
                 objects.forEach(function(node) {
                     if (node instanceof Sphere) {
-                        let ts = node.getIntersections(rayOrigin, rayDirection);
-                        if (ts[0] < nearest)
-                            nearest = ts[0];
+                        let intersectionDistance = node.getNearestIntersection(rayOrigin, rayDirection);
+                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(thisInstance.nearFrustum)));
+                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(10000)));
+                        cameraGeometry.vertices.push(intersectionDistance);
+                        cameraGeometry.vertices.push(node.center);
                     }
                 });
-                cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
-                cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(nearest)));
             }
         }
         return cameraGeometry;
     }
 
+    createRayTracedCameraGeometry(objects) {
+        // Create the camera geometry for the raytraced camera.
+
+        let rayOrigin = this.position.clone();
+        // Create camera (line segments) geometry
+        let cameraGeometry = new THREE.Geometry();
+        // Allows access to camera obj in the forEach function
+        let thisInstance = this;
+        // For every ray
+        for (let x = 0; x < this.imageWidth; x++) {
+            for (let y = 0; y < this.imageHeight; y++) {
+                // Set nearest intersection to farFrustum (default length of ray)
+                let nearestIntersection = thisInstance.farFrustum;
+                // Find ray direction (and apply camera quaternion for proper orientation)
+                let scale = Math.tan(this.fov * 0.5 * Math.PI / 180.0);
+                let Px = (2.0 * (x + 0.5) / this.imageWidth - 1.0) * this.aspect * scale;
+                let Py = (1.0 - 2.0 * (y + 0.5) / this.imageHeight) * scale;
+                let rayDirection = new THREE.Vector3(Px, Py, -1);
+                rayDirection.applyQuaternion(this.quaternion);
+                // For every object in scene
+                objects.forEach(function(node) {
+                    let intersectionDistance;
+
+                    // If the object is a sphere
+                    if (node instanceof Sphere) {
+                        intersectionDistance = node.getNearestIntersection(rayOrigin, rayDirection);
+                    }
+
+                    // Update nearest intersection if necessary
+                    if (nearestIntersection > intersectionDistance)
+                        nearestIntersection = intersectionDistance;
+                });
+                // Append the ray origin and the point on the ray with a distance equal to nearest intersection
+                // distance to the line segments geometry.
+                cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
+                cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(nearestIntersection)));
+            }
+        }
+        // Return the line segments geometry
+        return cameraGeometry;
+    }
+
     getRayTracedCameraMesh(objects) {
         // Returns a raytraced mesh for the camera at the position it was last placed.
-        let geometry = this.createRayTracedCameraGeometry(objects);
+        let geometry = this.testRayTrace(objects);
         let cameraMesh = new THREE.LineSegments(geometry,
             new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:1.0}));
         return cameraMesh;
