@@ -1,6 +1,7 @@
 class GUI {
 
     constructor(mainWindow) {
+        this.displayIntersecting = true;
         this.gui = new dat.GUI();
         this.mainWindow = mainWindow;
 
@@ -52,12 +53,30 @@ class GUI {
     addRayTraceCameraButton() {
         // Ray trace the camera
         var mainWindow = this.mainWindow;
+        var thisInstance = this;
         let params = {
             rayTraceCamera : function() {
-                mainWindow.rayTraceCamera();
+                mainWindow.rayTraceCamera(thisInstance.displayIntersecting);
             }
         };
         this.gui.add(params, 'rayTraceCamera').name('Ray Trace Camera');
     }
     
+    addIntersectToggle() {
+        // Checkbox that allows you to select whether to draw intersecting rays or only
+        // non-intersecting rays
+        var mainWindow = this.mainWindow;
+        var thisInstance = this;
+        let params = {
+            'Display Intersecting':this.displayIntersecting
+        }
+        this.gui.add(params, 'Display Intersecting').listen().onFinishChange(
+            function() {
+                thisInstance.displayIntersecting = params['Display Intersecting'];
+                console.log(thisInstance.displayIntersecting);
+                mainWindow.rayTraceCamera(thisInstance.displayIntersecting);
+            }
+        )
+    }
+
 }

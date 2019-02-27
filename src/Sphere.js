@@ -16,20 +16,18 @@ class Sphere {
         // Find the vector representing point t on the ray
         let tVector = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(t));
         // Get the vector going from center of sphere to point t
-        let centerToT = this.center.clone().add(tVector.clone().negate());
+        let centerToT = tVector.clone().add(this.center.clone().negate());
         // Get magnitude of centerToT
         let centerToTMagnitude = Math.sqrt(centerToT.dot(centerToT));
 
         // If the magnitude of the vector from t to circle center is greater than the circle radius,
         // the ray does not intersect the circle.
         if (centerToTMagnitude > this.radius)
-            return MAX_DISTANCE;
+            return MAX_DISTANCE; 
 
         // Find t1 (first intersection point)
-        let originToT = tVector.clone().add(rayOrigin.clone().negate());
-        let originToTMagnitude = Math.sqrt(originToT.dot(originToT));
         let c = Math.sqrt(this.radius*this.radius - centerToTMagnitude);
-        let di1 = originToTMagnitude + c;
+        let di1 = t - c;
 
         return t;
     }

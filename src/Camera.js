@@ -1,8 +1,8 @@
 class Camera {
 
     constructor() {
-        this.imageWidth = 10;
-        this.imageHeight = 10;
+        this.imageWidth = 20;
+        this.imageHeight = 20;
         this.fov = 36;
         this.aspect = 1.0;
         this.nearFrustum = 0.01;
@@ -53,7 +53,7 @@ class Camera {
         return this.camera.getWorldDirection(vector).normalize();
     }
 
-    createRayTracedCameraGeometry(objects) {
+    createRayTracedCameraGeometry(objects, displayIntersect) {
         // Create the camera geometry for the raytraced camera.
 
         let rayOrigin = this.position.clone();
@@ -87,24 +87,79 @@ class Camera {
                 });
                 // Append the ray origin and the point on the ray with a distance equal to nearest intersection
                 // distance to the line segments geometry.
-                let revisedRayDirection;
-                if (nearestIntersection == this.farFrustum)
-                    revisedRayDirection = rayDirection.clone();
-                else
-                    revisedRayDirection = rayDirection.clone();
-                cameraGeometry.vertices.push(rayOrigin.clone().add(revisedRayDirection.clone().multiplyScalar(this.nearFrustum)));
-                cameraGeometry.vertices.push(rayOrigin.clone().add(revisedRayDirection.clone().multiplyScalar(nearestIntersection)));
+                if (nearestIntersection >= this.farFrustum) {
+                    if (!displayIntersect) {
+                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
+                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.farFrustum)));
+                    }
+                } else {
+                    if (displayIntersect) {
+                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
+                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().normalize().multiplyScalar(nearestIntersection)));
+                    }
+                }
             }
         }
         // Return the line segments geometry
         return cameraGeometry;
     }
 
-    getRayTracedCameraMesh(objects) {
-        // Returns a raytraced mesh for the camera at the position it was last placed.
-        let geometry = this.createRayTracedCameraGeometry(objects);
+    createCameraOutlineGeometry() {
+        // Creates the outline geometry of the camera (the boundaries of the camera rays)
+        let closePoints = [], farPoints = [], xValues = [0, this.imageWidth-1], yValues = [this.imageHeight-1, 0];
+        let cameraGeometry = new THREE.Geometry();
+        for (let x = 0; x < 2; x++) {
+            for (let y = 0; y < 2; y++) {
+                let rayOrigin = this.position.clone();
+                let scale = Math.tan(this.fov * 0.5 * Math.PI / 180.0);
+                let Px = (2.0 * (xValues[x] + 0.5) / this.imageWidth - 1.0) * this.aspect * scale;
+                let Py = (1.0 - 2.0 * (yValues[y] + 0.5) / this.imageHeight) * scale;
+                let rayDirection = new THREE.Vector3(Px, Py, -1);
+                rayDirection.applyQuaternion(this.quaternion);
+                let closePoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum));
+                let farPoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.farFrustum));
+                closePoints.push(closePoint);
+                farPoints.push(farPoint);
+                cameraGeometry.vertices.push(closePoint);
+                cameraGeometry.vertices.push(farPoint);
+            }
+        }
+        cameraGeometry.vertices.push(closePoints[0]);
+        cameraGeometry.vertices.push(closePoints[1]);
+        cameraGeometry.vertices.push(farPoints[0]);
+        cameraGeometry.vertices.push(farPoints[1]);
+        
+        cameraGeometry.vertices.push(closePoints[0]);
+        cameraGeometry.vertices.push(closePoints[2]);
+        cameraGeometry.vertices.push(farPoints[0]);
+        cameraGeometry.vertices.push(farPoints[2]);
+        
+        cameraGeometry.vertices.push(closePoints[2]);
+        cameraGeometry.vertices.push(closePoints[3]);
+        cameraGeometry.vertices.push(farPoints[2]);
+        cameraGeometry.vertices.push(farPoints[3]);
+
+        cameraGeometry.vertices.push(closePoints[1]);
+        cameraGeometry.vertices.push(closePoints[3]);
+        cameraGeometry.vertices.push(farPoints[1]);
+        cameraGeometry.vertices.push(farPoints[3]);
+        
+        return cameraGeometry;
+    }
+
+    getCameraOutlineMesh() {
+        // Returns the outline mesh of the camera (the boundaries of the camera rays)
+        let geometry = this.createCameraOutlineGeometry();
         let cameraMesh = new THREE.LineSegments(geometry,
-            new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:1}));
+            new THREE.LineBasicMaterial({color:0xff0000}));
+        return cameraMesh;
+    }
+
+    getRayTracedCameraMesh(objects, displayIntersect) {
+        // Returns a raytraced mesh for the camera at the position it was last placed.
+        let geometry = this.createRayTracedCameraGeometry(objects, displayIntersect);
+        let cameraMesh = new THREE.LineSegments(geometry,
+            new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:1.0}));
         return cameraMesh;
     }
 

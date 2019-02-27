@@ -65,11 +65,13 @@ class MainWindow {
         });
     }
 
-    rayTraceCamera() {
+    rayTraceCamera(displayIntersect) {
         // Ray trace the current camera obj
         this.cameraRays = new THREE.Scene();
-        let cameraMesh = this.cameraObj.getRayTracedCameraMesh(this.objects);
+        let cameraMesh = this.cameraObj.getRayTracedCameraMesh(this.objects, displayIntersect);
+        let cameraOutlineMesh = this.cameraObj.getCameraOutlineMesh();
         this.cameraRays.add(cameraMesh);
+        this.cameraRays.add(cameraOutlineMesh);
         this.renderThis();
     }
 
@@ -90,7 +92,9 @@ class MainWindow {
         // Place camera mesh wherever the camera currently is in the world.
         this.cameraRays = new THREE.Scene();
         let cameraMesh = this.cameraObj.getCameraMesh();
+        let cameraOutlineMesh = this.cameraObj.getCameraOutlineMesh();
         this.cameraRays.add(cameraMesh);
+        this.cameraRays.add(cameraOutlineMesh);
         this.renderThis();
     }
 
