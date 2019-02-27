@@ -1,3 +1,5 @@
+var MAX_DISTANCE = 10000000;
+
 class Sphere {
 
     constructor(center, radius) {
@@ -18,10 +20,17 @@ class Sphere {
         // Get magnitude of centerToT
         let centerToTMagnitude = Math.sqrt(centerToT.dot(centerToT));
 
-        if (centerToTMagnitude <= this.radius)
-            closeEnough = true;
-        if (closeEnough)
-            return this.center.clone().add(centerToT.negate());
-        return this.center.clone();
+        // If the magnitude of the vector from t to circle center is greater than the circle radius,
+        // the ray does not intersect the circle.
+        if (centerToTMagnitude > this.radius)
+            return MAX_DISTANCE;
+
+        // Find t1 (first intersection point)
+        let originToT = tVector.clone().add(rayOrigin.clone().negate());
+        let originToTMagnitude = Math.sqrt(originToT.dot(originToT));
+        let c = Math.sqrt(this.radius*this.radius - centerToTMagnitude);
+        let di1 = originToTMagnitude + c;
+
+        return t;
     }
 }
