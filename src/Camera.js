@@ -9,6 +9,9 @@ class Camera {
         this.farFrustum = 10;
         this.position = new THREE.Vector3(0, 0, 0);
         this.updateCamera();
+
+        this.intersectingList = [];
+        this.intersectingPushBack = 0.01; // This affects how far intersecting vertices are pushed back from where they intersect (to help with shadow rays)
     }
 
     updateCamera() {
@@ -56,6 +59,8 @@ class Camera {
     createRayTracedCameraGeometry(objects, displayIntersect) {
         // Create the camera geometry for the raytraced camera.
 
+        this.intersectingList = [];
+
         let rayOrigin = this.position.clone();
         // Create camera (line segments) geometry
         let cameraGeometry = new THREE.Geometry();
@@ -94,8 +99,14 @@ class Camera {
                     }
                 } else {
                     if (displayIntersect) {
+                        nearestIntersection -= this.intersectingPushBack;
+                        if (nearestIntersection < 0)
+                            nearestIntersection = 0;
+                        let intersectionPoint = rayOrigin.clone().add(rayDirection.clone().normalize().multiplyScalar(nearestIntersection));
                         cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
-                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().normalize().multiplyScalar(nearestIntersection)));
+                        cameraGeometry.vertices.push(intersectionPoint);
+                        // Push the intersection point onto the array.
+                        this.intersectingList.push(intersectionPoint);
                     }
                 }
             }
@@ -147,6 +158,14 @@ class Camera {
         return cameraGeometry;
     }
 
+    getPointLightMesh(pointLight, objects) {
+        // Returns the shadow ray mesh for a given point light
+        let geometry = this.createPointLightGeometry(pointLight, objects);
+        let pointLightMesh = new THREE.LineSegments(geometry, 
+            new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:1.0}));
+        return pointLightMesh;
+    }
+
     getCameraOutlineMesh() {
         // Returns the outline mesh of the camera (the boundaries of the camera rays)
         let geometry = this.createCameraOutlineGeometry();
@@ -155,9 +174,9 @@ class Camera {
         return cameraMesh;
     }
 
-    getRayTracedCameraMesh(objects, displayIntersect) {
+    getRayTracedCameraMesh(objects, displayIntersect, intersectingList) {
         // Returns a raytraced mesh for the camera at the position it was last placed.
-        let geometry = this.createRayTracedCameraGeometry(objects, displayIntersect);
+        let geometry = this.createRayTracedCameraGeometry(objects, displayIntersect, intersectingList);
         let cameraMesh = new THREE.LineSegments(geometry,
             new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:1.0}));
         return cameraMesh;
@@ -171,6 +190,24 @@ class Camera {
         let cameraMesh = new THREE.LineSegments(geometry,
             new THREE.LineBasicMaterial({color:0xffffff}));
         return cameraMesh;
+    }
+
+    getMainCameraPos() {
+        // Get the position of the viewing camera (NOT a placed camera)
+        return this.camera.position.clone();
+    }
+
+    createPointLightGeometry(pointLight, objects) {
+        // Create the shadow ray geometry for the given point light.
+        let shadowRayGeometry = new THREE.Geometry();
+        for (let i = 0; i < this.intersectingList.length; i++) {
+            let cameraIntersectingPoint = this.intersectingList[i];
+            let rayDirection = pointLight.position.clone().add(cameraIntersectingPoint.clone().negate()).normalize();
+            let t = pointLight.getNearestIntersection(cameraIntersectingPoint, rayDirection, objects);
+            shadowRayGeometry.vertices.push(cameraIntersectingPoint.clone());
+            shadowRayGeometry.vertices.push(cameraIntersectingPoint.clone().add(rayDirection.multiplyScalar(t)));
+        }
+        return shadowRayGeometry;
     }
 
     createCameraGeometry(position, direction) {

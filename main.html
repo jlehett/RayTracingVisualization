@@ -24,6 +24,7 @@
 		uniform mat4 projectionMatrix; // optional
 
 		attribute vec3 position;
+
 		void main()
 		{
 			vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
@@ -35,9 +36,11 @@
 		precision mediump float;
 		precision mediump int;
 
+		uniform vec3 color;
+
 		void main()
 		{
-			gl_FragColor = vec4(1.0);
+			gl_FragColor = vec4(color,1.0);
 		}
 	</script>
 
@@ -121,14 +124,15 @@
 		}
 	</script>
 
-	<script src="https://threejs.org/build/three.js"></script>
-	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script src="./dependencies/three.js"></script>
+	<script src="./dependencies/OrbitControls.js"></script>
 	<script src="./dependencies/OBJLoader.js"></script>
 	<script src="./dependencies/dat.gui.js"></script>
 	<script src="./src/MainWindow.js"></script>
 	<script src="./src/GUI.js"></script>
 	<script src="./src/Camera.js"></script>
 	<script src="./src/Sphere.js"></script>
+	<script src="./src/PointLight.js"></script>
 
 	<!-- Hidden input for file loading -->
 	<input id="myInput" type="file" style="visibility:hidden"/>
@@ -147,8 +151,11 @@
 			var gui = new GUI(mainWindow);
 			gui.addFileSelectButton('myInput');
 			gui.addCameraPlaceButton();
+			gui.addPointLightPlaceButton();
 			gui.addRayTraceCameraButton();
 			gui.addIntersectToggle();
+			gui.addShadowRayToggle();
+			gui.addOutlineToggle();
 
 			// Instantiate Camera
 			var camera = new Camera();

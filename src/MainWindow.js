@@ -22,6 +22,7 @@ class MainWindow {
         // Rays
         this.rays = new THREE.Scene();
         this.cameraRays = new THREE.Scene();
+        this.shadowRays = new THREE.Scene();
         // Inner mesh and outer meshes are rendered in two separate passes to give
         // transparent effect.
         this.innerMeshes = new THREE.Scene();
@@ -31,6 +32,13 @@ class MainWindow {
 
         // Objects for ray intersection detection
         this.objects = [];
+
+        // Settings for rendering outline
+        this.renderOutline = true;
+
+        // Lights
+        this.pointLights = [];
+        this.pointLightScene = new THREE.Scene();
 
         // Involved in initial placement and zoom of the camera within the scene.
         this.minCoords = new THREE.Vector3(null, null, null);
@@ -43,6 +51,9 @@ class MainWindow {
 
         // Basic 3D Mesh material (Used by inner mesh in outlined mesh rendering)
         this.inMaterial = new THREE.RawShaderMaterial( {
+            uniforms: {
+                color: {type: "v3", value: new THREE.Vector3(1, 0, 1)},
+            },
             vertexShader: document.getElementById('vertexShaderIn').textContent,
             fragmentShader: document.getElementById('fragmentShaderIn').textContent,
         });
@@ -56,8 +67,8 @@ class MainWindow {
         // Outline 3D Mesh material (Used by outer mesh in outlined mesh rendering)
         this.outMaterial = new THREE.RawShaderMaterial( {
             uniforms: {
-            color: {type: "v3", value: new THREE.Vector3( 1, 0, 1 ) },
-            edgeWidth: {type: "float", value: 0.01}
+                color: {type: "v3", value: new THREE.Vector3( 1, 0, 1 ) },
+                edgeWidth: {type: "float", value: 0.01}
             },
             side:THREE.BackSide,
             vertexShader: document.getElementById('vertexShaderOut').textContent,
@@ -65,14 +76,37 @@ class MainWindow {
         });
     }
 
-    rayTraceCamera(displayIntersect) {
+    rayTraceCamera(displayIntersect, displayShadowRays) {
         // Ray trace the current camera obj
+        this.intersectingCameraRays = [];
         this.cameraRays = new THREE.Scene();
         let cameraMesh = this.cameraObj.getRayTracedCameraMesh(this.objects, displayIntersect);
         let cameraOutlineMesh = this.cameraObj.getCameraOutlineMesh();
         this.cameraRays.add(cameraMesh);
         this.cameraRays.add(cameraOutlineMesh);
+        if (displayShadowRays)
+            this.rayTracePointLights();
         this.renderThis();
+    }
+
+    rayTracePointLights() {
+        // Ray trace all point lights to intersecting camera rays
+        this.shadowRays = new THREE.Scene();
+        for (let i = 0; i < this.pointLights.length; i++) {
+            let pointLight = this.pointLights[i];
+            this.rayTracePointLight(pointLight);
+        }
+        this.renderThis();
+    }
+
+    rayTracePointLight(pointLight) {
+        // Ray trace the intersecting camera rays to a point light
+        let rayMesh = this.cameraObj.getPointLightMesh(pointLight, this.objects);
+        this.shadowRays.add(rayMesh);
+    }
+
+    toggleOutlineRender() {
+        this.renderOutline = !this.renderOutline;
     }
 
     setCamera(cameraObj) {
@@ -98,6 +132,16 @@ class MainWindow {
         this.renderThis();
     }
 
+    placePointLight() {
+        // Place point light wherever the camera currently is in the world.
+        let position = this.cameraObj.getMainCameraPos();
+        let pointLight = new PointLight(position);
+        let pointLightMesh = pointLight.mesh;
+        this.pointLights.push(pointLight);
+        this.pointLightScene.add(pointLightMesh);
+        this.renderThis();
+    }
+
     onWindowResize() {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
@@ -112,15 +156,21 @@ class MainWindow {
 
         // Render all rays first
         thisInstance.renderer.render(thisInstance.cameraRays, thisInstance.camera);
-        //thisInstance.renderer.render(thisInstance.rays, thisInstance.camera);
+        thisInstance.renderer.render(thisInstance.shadowRays, thisInstance.camera);
+        thisInstance.renderer.render(thisInstance.pointLightScene, thisInstance.camera);
+        thisInstance.renderer.render(thisInstance.rays, thisInstance.camera);
 
         // Render the outlined meshes using colorMask technique
         let gl = thisInstance.renderer.domElement.getContext('webgl');
         thisInstance.renderer.autoClear = false;
-        gl.colorMask(false, false, false, false);
+        if (thisInstance.renderOutline)
+            gl.colorMask(false, false, false, false);
+        else
+            gl.colorMask(true, true, true, true);
         thisInstance.renderer.render(thisInstance.innerMeshes, thisInstance.camera);
         gl.colorMask(true, true, true, true);
-        thisInstance.renderer.render(thisInstance.outerMeshes, thisInstance.camera);
+        if (thisInstance.renderOutline)
+            thisInstance.renderer.render(thisInstance.outerMeshes, thisInstance.camera);
 
         // Render the crease meshes
         //this.renderer.render(this.creaseMeshes, this.camera);
@@ -207,12 +257,14 @@ class MainWindow {
             // Construct material based off outline material. Need to clone outline material because
             // we will be changing its color for each sphere. No need to change color of inner material.
             let localoutMaterial = this.outMaterial.clone();
+            let localinMaterial = this.inMaterial.clone();
             localoutMaterial.uniforms.color.value.set(object.color[colorIndex]/255, object.color[colorIndex+1]/255, object.color[colorIndex+2]/255);
+            localinMaterial.uniforms.color.value.set(object.color[colorIndex]/255, object.color[colorIndex+1]/255, object.color[colorIndex+2]/255);
             // Construct sphere geometry and translate to proper position.
             let geometry = new THREE.SphereGeometry(object.quadruples[i+3], 50, 50);
             geometry.translate(object.quadruples[i], object.quadruples[i+1], object.quadruples[i+2]);
             // Create separate meshes for outlining algorithm and add them to their respective scenes.
-            let innerMesh = new THREE.Mesh(geometry, this.inMaterial);
+            let innerMesh = new THREE.Mesh(geometry, localinMaterial);
             let outerMesh = new THREE.Mesh(geometry, localoutMaterial);
             let creaseMesh = new THREE.Mesh(geometry, this.creaseMaterial);
             this.addMeshes(innerMesh, outerMesh, creaseMesh);
@@ -258,9 +310,11 @@ class MainWindow {
             // Construct material based off outline material. Need to clone outline material because
             // we will be changing its color for each sphere. No need to change color of inner material.
             let localoutMaterial = this.outMaterial.clone();
+            let localinMaterial = this.inMaterial.clone();
             localoutMaterial.uniforms.color.value.set(object.color[colorIndex]/255, object.color[colorIndex+1]/255, object.color[colorIndex+2]/255);
+            localinMaterial.uniforms.color.value.set(object.color[colorIndex]/255, object.color[colorIndex+1]/255, object.color[colorIndex+2]/255);
             // Create separate meshes for outlining algorithm and add them to their respective scenes.
-            let innerMesh = new THREE.Mesh(geometry, this.inMaterial);
+            let innerMesh = new THREE.Mesh(geometry, localinMaterial);
             let outerMesh = new THREE.Mesh(geometry, localoutMaterial);
             let creaseMesh = new THREE.Mesh(geometry, this.creaseMaterial);
             this.addMeshes(innerMesh, outerMesh, creaseMesh);

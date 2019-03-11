@@ -26,9 +26,9 @@ class Sphere {
             return MAX_DISTANCE; 
 
         // Find t1 (first intersection point)
-        let c = Math.sqrt(this.radius*this.radius - centerToTMagnitude);
+        let c = Math.sqrt(this.radius*this.radius - centerToTMagnitude*centerToTMagnitude);
         let di1 = t - c;
 
-        return t;
+        return di1;
     }
 }
