@@ -6,7 +6,6 @@ class MainWindow {
         this.renderer.autoClear = false;
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        window.addEventListener('resize', this.onWindowResize, false);
         document.body.appendChild(this.renderer.domElement);
         this.renderer.setClearColor(0x000000, 1);
         // Camera
@@ -19,6 +18,14 @@ class MainWindow {
         this.controls.addEventListener('change', function(){
             renderFunction(thisInstance);
         });
+        // Resizing
+        var thisInstance = this;
+        window.addEventListener('resize', function() {
+            thisInstance.camera.aspect = window.innerWidth / window.innerHeight;
+            thisInstance.camera.updateProjectionMatrix();
+            thisInstance.renderer.setSize(window.innerWidth, window.innerHeight);
+            thisInstance.renderThis(thisInstance);
+        }, false);
         // Rays
         this.rays = new THREE.Scene();
         this.cameraRays = new THREE.Scene();
@@ -140,12 +147,6 @@ class MainWindow {
         this.pointLights.push(pointLight);
         this.pointLightScene.add(pointLightMesh);
         this.renderThis();
-    }
-
-    onWindowResize() {
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
     renderThis(thisInstance=null) {
@@ -319,6 +320,11 @@ class MainWindow {
             let creaseMesh = new THREE.Mesh(geometry, this.creaseMaterial);
             this.addMeshes(innerMesh, outerMesh, creaseMesh);
 
+            // Create triangle object for ray intersection detection
+            for (let i = 0; i < geometry.vertices.length-2; i++) {
+                this.objects.push(new Triangle(geometry.vertices[i], geometry.vertices[i+1], geometry.vertices[i+2]));
+            }
+
             // Color index needs to be bumped up by 3 for next mesh (each mesh has r, g, b values for color)
             colorIndex += 3;
         }
@@ -368,10 +374,17 @@ class MainWindow {
                     if (child instanceof THREE.Mesh) {
                         child.geometry.computeFaceNormals();
                         child.geometry.computeVertexNormals();
+                        let positions = child.geometry.attributes.position.array;
                         let innerMesh = new THREE.Mesh(child.geometry, thisInstance.inMaterial);
                         let outerMesh = new THREE.Mesh(child.geometry, thisInstance.outMaterial);
                         let creaseMesh = new THREE.Mesh(child.geometry, thisInstance.creaseMaterial);
                         thisInstance.addMeshes(innerMesh, outerMesh, creaseMesh);
+                        for (let i = 0; i < positions.length; i += 9) {
+                            let v1 = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
+                            let v2 = new THREE.Vector3(positions[i+3], positions[i+4], positions[i+5]);
+                            let v3 = new THREE.Vector3(positions[i+6], positions[i+7], positions[i+8]);
+                            thisInstance.objects.push(new Triangle(v1, v2, v3));
+                        }
                     }
                 });
                 // Set orbit controls center to scene center.

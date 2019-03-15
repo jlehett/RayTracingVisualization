@@ -1,25 +1,41 @@
 class GUI {
 
-    constructor(mainWindow) {
+    constructor(mainWindow, inputTag) {
         this.displayIntersecting = true;
         this.gui = new dat.GUI();
         this.mainWindow = mainWindow;
+        this.inputTag = inputTag;
 
         this.effectController = {
             edgeWidth: 0.01
         };
 
-        var thisInstance = this;
-
         this.displayIntersecting = false;
         this.displayShadowRays = false;
         this.renderOutline = true;
 
-        // Edge width slider
-        this.gui.add(this.effectController, 'edgeWidth', 0.000001, 1.0).name('Edge Width').onChange(
+        this.addFileSelectButton(this.inputTag);
+        this.addRayTraceCameraButton();
+        
+        this.placeFolder = this.gui.addFolder("Place")
+        this.addCameraPlaceButton();
+        this.placeLightsFolder = this.placeFolder.addFolder("Lights");
+        this.addPointLightPlaceButton();
+
+        this.settingsFolder = this.gui.addFolder("Settings");
+        this.addEdgeWidthSlider();
+        this.addOutlineToggle();
+        this.addIntersectToggle();
+        this.addShadowRayToggle();
+    }
+
+    addEdgeWidthSlider() {
+        var thisInstance = this;
+        this.settingsFolder.add(this.effectController, 'edgeWidth', 0.000001, 1.0).name('Edge Width').onChange(
             function() {
                 thisInstance.mainWindow.changeEdgeSize(thisInstance.effectController.edgeWidth);
-            });
+            }
+        );
     }
 
     addFileSelectButton(inputTag) {
@@ -51,7 +67,7 @@ class GUI {
                 mainWindow.placeCameraMesh();
             }
         };
-        this.gui.add(params, 'placeCamera').name('Place Camera');
+        this.placeFolder.add(params, 'placeCamera').name('Place Camera');
     }
 
     addPointLightPlaceButton() {
@@ -62,7 +78,7 @@ class GUI {
                 mainWindow.placePointLight();
             }
         };
-        this.gui.add(params, 'placePointLight').name('Place Point Light');
+        this.placeLightsFolder.add(params, 'placePointLight').name('Place Point Light');
     }
 
     addRayTraceCameraButton() {
@@ -85,7 +101,7 @@ class GUI {
         let params = {
             'Display Intersecting':this.displayIntersecting
         }
-        this.gui.add(params, 'Display Intersecting').listen().onFinishChange(
+        this.settingsFolder.add(params, 'Display Intersecting').listen().onFinishChange(
             function() {
                 thisInstance.displayIntersecting = params['Display Intersecting'];
                 mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
@@ -100,7 +116,7 @@ class GUI {
         let params = {
             'Display Shadow Rays':this.displayIntersecting
         }
-        this.gui.add(params, 'Display Shadow Rays').listen().onFinishChange(
+        this.settingsFolder.add(params, 'Display Shadow Rays').listen().onFinishChange(
             function() {
                 thisInstance.displayShadowRays = params['Display Shadow Rays'];
                 mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
@@ -115,7 +131,7 @@ class GUI {
         let params = {
             'Render Outline':this.renderOutline
         }
-        this.gui.add(params, 'Render Outline').listen().onFinishChange(
+        this.settingsFolder.add(params, 'Render Outline').listen().onFinishChange(
             function() {
                 mainWindow.toggleOutlineRender();
                 mainWindow.renderThis();

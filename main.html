@@ -132,6 +132,7 @@
 	<script src="./src/GUI.js"></script>
 	<script src="./src/Camera.js"></script>
 	<script src="./src/Sphere.js"></script>
+	<script src="./src/Triangle.js"></script>
 	<script src="./src/PointLight.js"></script>
 
 	<!-- Hidden input for file loading -->
@@ -148,14 +149,7 @@
 			var mainWindow = new MainWindow();
 
 			// Instantiate GUI
-			var gui = new GUI(mainWindow);
-			gui.addFileSelectButton('myInput');
-			gui.addCameraPlaceButton();
-			gui.addPointLightPlaceButton();
-			gui.addRayTraceCameraButton();
-			gui.addIntersectToggle();
-			gui.addShadowRayToggle();
-			gui.addOutlineToggle();
+			var gui = new GUI(mainWindow, 'myInput');
 
 			// Instantiate Camera
 			var camera = new Camera();

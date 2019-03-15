@@ -5,7 +5,7 @@ class Camera {
         this.imageHeight = 20;
         this.fov = 36;
         this.aspect = 1.0;
-        this.nearFrustum = 0.01;
+        this.nearFrustum = 0.001;
         this.farFrustum = 10;
         this.position = new THREE.Vector3(0, 0, 0);
         this.updateCamera();
@@ -85,9 +85,13 @@ class Camera {
                     if (node instanceof Sphere) {
                         intersectionDistance = node.getNearestIntersection(rayOrigin.clone(), rayDirection.clone().normalize());
                     }
+                    
+                    if (node instanceof Triangle) {
+                        intersectionDistance = node.getNearestIntersection(rayOrigin.clone(), rayDirection.clone().normalize());
+                    }
 
-                    // Update nearest intersection if necessary
-                    if (nearestIntersection > intersectionDistance)
+                    // Update nearest intersection if necessary 
+                    if (nearestIntersection > intersectionDistance && intersectionDistance > thisInstance.nearFrustum)
                         nearestIntersection = intersectionDistance;
                 });
                 // Append the ray origin and the point on the ray with a distance equal to nearest intersection
