@@ -40,6 +40,9 @@ class MainWindow {
         // Objects for ray intersection detection
         this.objects = [];
 
+        // Bounding Box Visualizations for triangle-ray intersection
+        this.boundingBoxes = new THREE.Scene();
+
         // Settings for rendering outline
         this.renderOutline = true;
 
@@ -160,6 +163,8 @@ class MainWindow {
         thisInstance.renderer.render(thisInstance.shadowRays, thisInstance.camera);
         thisInstance.renderer.render(thisInstance.pointLightScene, thisInstance.camera);
         thisInstance.renderer.render(thisInstance.rays, thisInstance.camera);
+
+        thisInstance.renderer.render(thisInstance.boundingBoxes, thisInstance.camera);
 
         // Render the outlined meshes using colorMask technique
         let gl = thisInstance.renderer.domElement.getContext('webgl');
@@ -379,12 +384,21 @@ class MainWindow {
                         let outerMesh = new THREE.Mesh(child.geometry, thisInstance.outMaterial);
                         let creaseMesh = new THREE.Mesh(child.geometry, thisInstance.creaseMaterial);
                         thisInstance.addMeshes(innerMesh, outerMesh, creaseMesh);
+
+                        // Create BoundingBoxTree (for efficient ray-triangle intersection)
+                        let numTriangles = positions.length / 9.0;
+                        let BBTree = new BoundingBoxTree(numTriangles);
+
                         for (let i = 0; i < positions.length; i += 9) {
                             let v1 = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
                             let v2 = new THREE.Vector3(positions[i+3], positions[i+4], positions[i+5]);
                             let v3 = new THREE.Vector3(positions[i+6], positions[i+7], positions[i+8]);
-                            thisInstance.objects.push(new Triangle(v1, v2, v3));
+                            //thisInstance.objects.push(new Triangle(v1, v2, v3));
+                            BBTree.addTriangle(v1, v2, v3);
                         }
+
+                        BBTree.computeBoundingBoxes();
+                        thisInstance.objects.push(BBTree);
                     }
                 });
                 // Set orbit controls center to scene center.

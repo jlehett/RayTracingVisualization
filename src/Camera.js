@@ -90,6 +90,10 @@ class Camera {
                         intersectionDistance = node.getNearestIntersection(rayOrigin.clone(), rayDirection.clone().normalize());
                     }
 
+                    if (node instanceof BoundingBoxTree) {
+                        intersectionDistance = node.getNearestIntersection(rayOrigin.clone(), rayDirection.clone().normalize());
+                    }
+
                     // Update nearest intersection if necessary 
                     if (nearestIntersection > intersectionDistance && intersectionDistance > thisInstance.nearFrustum)
                         nearestIntersection = intersectionDistance;
