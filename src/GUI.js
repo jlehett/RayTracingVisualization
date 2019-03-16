@@ -7,7 +7,9 @@ class GUI {
         this.inputTag = inputTag;
 
         this.effectController = {
-            edgeWidth: 0.01
+            edgeWidth: 0.01,
+            frustumLength: 10,
+            numRaysSent: 20
         };
 
         this.displayIntersecting = false;
@@ -23,10 +25,36 @@ class GUI {
         this.addPointLightPlaceButton();
 
         this.settingsFolder = this.gui.addFolder("Settings");
+        this.cameraSettingsFolder = this.settingsFolder.addFolder("Camera Settings");
+            this.addFrustumSlider();
+            this.addNumRaysSlider();
         this.addEdgeWidthSlider();
         this.addOutlineToggle();
         this.addIntersectToggle();
         this.addShadowRayToggle();
+    }
+
+    addFrustumSlider() {
+        var thisInstance = this;
+        var mainWindow = this.mainWindow;
+        this.cameraSettingsFolder.add(this.effectController, 'frustumLength', 1, 4000).name('Frustum Length').onChange(
+            function() {
+                mainWindow.cameraObj.farFrustum = thisInstance.effectController['frustumLength'];
+                mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
+            }
+        )
+    }
+
+    addNumRaysSlider() {
+        var thisInstance = this;
+        var mainWindow = this.mainWindow;
+        this.cameraSettingsFolder.add(this.effectController, 'numRaysSent', 1, 100).name('Rays Sent').onChange(
+            function() {
+                mainWindow.cameraObj.imageHeight = Math.round(thisInstance.effectController['numRaysSent']);
+                mainWindow.cameraObj.imageWidth = Math.round(thisInstance.effectController['numRaysSent']);
+                mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
+            }
+        )
     }
 
     addEdgeWidthSlider() {

@@ -47,6 +47,7 @@ class Camera {
         // Place the camera at the THREE.Vector3 position
         this.position = this.camera.position.clone();
         this.quaternion = this.camera.quaternion.clone();
+        console.log(this.imageHeight, this.imageWidth);
     }
 
     getCameraDirection() {
