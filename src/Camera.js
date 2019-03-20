@@ -126,14 +126,14 @@ class Camera {
 
     createCameraOutlineGeometry() {
         // Creates the outline geometry of the camera (the boundaries of the camera rays)
-        let closePoints = [], farPoints = [], xValues = [0, this.imageWidth-1], yValues = [this.imageHeight-1, 0];
+        let closePoints = [], farPoints = []
         let cameraGeometry = new THREE.Geometry();
         for (let x = 0; x < 2; x++) {
             for (let y = 0; y < 2; y++) {
                 let rayOrigin = this.position.clone();
-                let scale = Math.tan(this.fov * 0.5 * Math.PI / 180.0);
-                let Px = (2.0 * (xValues[x] + 0.5) / this.imageWidth - 1.0) * this.aspect * scale;
-                let Py = (1.0 - 2.0 * (yValues[y] + 0.5) / this.imageHeight) * scale;
+                let scale = Math.tan(this.fov * 0.5 * Math.PI / 180.0) * 2.0;
+                let Px = (2.0 * (x + 0.5) / 2.0 - 1.0) * this.aspect * scale;
+                let Py = (1.0 - 2.0 * (y + 0.5) / 2.0) * scale;
                 let rayDirection = new THREE.Vector3(Px, Py, -1);
                 rayDirection.applyQuaternion(this.quaternion);
                 let closePoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum));
