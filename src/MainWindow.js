@@ -32,7 +32,8 @@ class MainWindow {
         this.intersectingCameraDots = new THREE.Scene();
         this.intersectingCameraRays = new THREE.Scene();
         this.nonintersectingCameraRays = new THREE.Scene();
-        this.shadowRays = new THREE.Scene();
+        this.blockedShadowRays = new THREE.Scene();
+        this.unblockedShadowRays = new THREE.Scene();
         // Inner mesh and outer meshes are rendered in two separate passes to give
         // transparent effect.
         this.innerMeshes = new THREE.Scene();
@@ -114,18 +115,20 @@ class MainWindow {
 
     rayTracePointLights() {
         // Ray trace all point lights to intersecting camera rays
-        this.shadowRays = new THREE.Scene();
+        this.cameraObj.blockedShadowScene = new THREE.Scene();
+        this.cameraObj.unblockedShadowScene = new THREE.Scene();
         for (let i = 0; i < this.pointLights.length; i++) {
             let pointLight = this.pointLights[i];
             this.rayTracePointLight(pointLight);
         }
+        this.blockedShadowRays = this.cameraObj.blockedShadowScene;
+        this.unblockedShadowRays = this.cameraObj.unblockedShadowScene;
         this.renderThis();
     }
 
     rayTracePointLight(pointLight) {
         // Ray trace the intersecting camera rays to a point light
-        let rayMesh = this.cameraObj.getPointLightMesh(pointLight, this.objects);
-        this.shadowRays.add(rayMesh);
+        this.cameraObj.updateShadowRays(pointLight, this.objects);
     }
 
     toggleOutlineRender() {
@@ -194,23 +197,28 @@ class MainWindow {
             thisInstance.renderer.render(thisInstance.nonintersectingCameraRays, thisInstance.camera);
         }
         if (thisInstance.gui.displayShadowRays && thisInstance.gui.displayIntersecting) {
-            thisInstance.renderer.render(thisInstance.shadowRays, thisInstance.camera);
+            if (thisInstance.gui.displayPartial) {
+                thisInstance.renderer.render(thisInstance.blockedShadowRays, thisInstance.camera);
+            }
+            thisInstance.renderer.render(thisInstance.unblockedShadowRays, thisInstance.camera);
         }
 
         thisInstance.renderer.render(thisInstance.pointLightScene, thisInstance.camera);
         thisInstance.renderer.render(thisInstance.rays, thisInstance.camera);
 
         // Render the outlined meshes using colorMask technique
-        let gl = thisInstance.renderer.domElement.getContext('webgl');
-        thisInstance.renderer.autoClear = false;
-        if (thisInstance.renderOutline)
-            gl.colorMask(false, false, false, false);
-        else
+        if (thisInstance.gui.displayObjects) {
+            let gl = thisInstance.renderer.domElement.getContext('webgl');
+            thisInstance.renderer.autoClear = false;
+            if (thisInstance.renderOutline)
+                gl.colorMask(false, false, false, false);
+            else
+                gl.colorMask(true, true, true, true);
+            thisInstance.renderer.render(thisInstance.innerMeshes, thisInstance.camera);
             gl.colorMask(true, true, true, true);
-        thisInstance.renderer.render(thisInstance.innerMeshes, thisInstance.camera);
-        gl.colorMask(true, true, true, true);
-        if (thisInstance.renderOutline)
-            thisInstance.renderer.render(thisInstance.outerMeshes, thisInstance.camera);
+            if (thisInstance.renderOutline)
+                thisInstance.renderer.render(thisInstance.outerMeshes, thisInstance.camera);
+        }
 
         // Render the crease meshes
         //this.renderer.render(this.creaseMeshes, this.camera);

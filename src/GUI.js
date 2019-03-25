@@ -16,6 +16,8 @@ class GUI {
         this.intersectDots = true;
         this.displayShadowRays = true;
         this.renderOutline = true;
+        this.displayPartial = false;
+        this.displayObjects = true;
 
         this.addFileSelectButton(this.inputTag);
         this.addRayTraceCameraButton();
@@ -35,9 +37,11 @@ class GUI {
                     this.addDotToggle();
                 this.shadowFolder = this.displayFolder.addFolder("Shadow");
                     this.addShadowRayToggle();
-                this.miscFolder = this.displayFolder.addFolder("Misc");
-                    this.addEdgeWidthSlider();
+                    this.addPartialToggle();
+                this.objectsFolder = this.displayFolder.addFolder("Objects");
+                    this.addDisplayObjectsToggle();
                     this.addOutlineToggle();
+                    this.addEdgeWidthSlider();
     }
 
     addFrustumSlider() {
@@ -65,7 +69,7 @@ class GUI {
 
     addEdgeWidthSlider() {
         var thisInstance = this;
-        this.miscFolder.add(this.effectController, 'edgeWidth', 0.000001, 1.0).name('Edge Width').onChange(
+        this.objectsFolder.add(this.effectController, 'edgeWidth', 0.000001, 1.0).name('Edge Width').onChange(
             function() {
                 thisInstance.mainWindow.changeEdgeSize(thisInstance.effectController.edgeWidth);
             }
@@ -143,6 +147,21 @@ class GUI {
         )
     }
 
+    addDisplayObjectsToggle() {
+        // Checkbox that allows you to select whether to draw objects or not.
+        var mainWindow = this.mainWindow;
+        var thisInstance = this;
+        let params = {
+            'On': this.displayObjects
+        }
+        this.objectsFolder.add(params, 'On').listen().onFinishChange(
+            function() {
+                thisInstance.displayObjects = params['On'];
+                mainWindow.renderThis();
+            }
+        )
+    }
+
     addDotToggle() {
         // Checkbox that allows you to select whether to use dots or rays for intersection points
         var mainWindow = this.mainWindow;
@@ -173,6 +192,21 @@ class GUI {
         )
     }
 
+    addPartialToggle() {
+        // Checkbox that allows you to select whether to view blocked shadow rays or not
+        var mainWindow = this.mainWindow;
+        var thisInstance = this;
+        let params = {
+            'Partial':this.displayPartial
+        }
+        this.shadowFolder.add(params, 'Partial').listen().onFinishChange(
+            function() {
+                thisInstance.displayPartial = params['Partial'];
+                mainWindow.renderThis();
+            }
+        )
+    }
+
     addOutlineToggle() {
         // Checkbox that allows you to select whether to display objects in scene as outlines or solid
         var mainWindow = this.mainWindow;
@@ -180,7 +214,7 @@ class GUI {
         let params = {
             'Render Outline':this.renderOutline
         }
-        this.miscFolder.add(params, 'Render Outline').listen().onFinishChange(
+        this.objectsFolder.add(params, 'Render Outline').listen().onFinishChange(
             function() {
                 mainWindow.toggleOutlineRender();
                 mainWindow.renderThis();

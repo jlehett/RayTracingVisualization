@@ -1,5 +1,3 @@
-var MAX_DISTANCE = 10000000;
-
 class PointLight {
 
     constructor(position) {
@@ -14,6 +12,14 @@ class PointLight {
             new THREE.LineBasicMaterial({color:0xffffff})
         );
         return mesh;
+    }
+
+    hasIntersection(t, rayOrigin) {
+        let defaultT = this.position.clone().add(rayOrigin.clone().negate());
+        defaultT = Math.sqrt(defaultT.dot(defaultT));
+        if (t == defaultT)
+            return false;
+        return true;
     }
 
     getNearestIntersection(rayOrigin, rayDirection, objects) {

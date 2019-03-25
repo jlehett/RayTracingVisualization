@@ -16,6 +16,8 @@ class Camera {
         this.intersectingDotScene = new THREE.Scene();
         this.intersectingScene = new THREE.Scene();
         this.nonintersectingScene = new THREE.Scene();
+        this.blockedShadowScene = new THREE.Scene();
+        this.unblockedShadowScene = new THREE.Scene();
     }
 
     updateCamera() {
@@ -224,6 +226,29 @@ class Camera {
     getMainCameraPos() {
         // Get the position of the viewing camera (NOT a placed camera)
         return this.camera.position.clone();
+    }
+
+    updateShadowRays(pointLight, objects) {
+        let blockedShadowGeometry = new THREE.Geometry();
+        let unblockedShadowGeometry = new THREE.Geometry();
+        for (let i = 0; i < this.intersectingList.length; i++) {
+            let cameraIntersectingPoint = this.intersectingList[i];
+            let rayDirection = pointLight.position.clone().add(cameraIntersectingPoint.clone().negate()).normalize();
+            let t = pointLight.getNearestIntersection(cameraIntersectingPoint, rayDirection, objects);
+            if (!pointLight.hasIntersection(t, cameraIntersectingPoint)) {
+                unblockedShadowGeometry.vertices.push(cameraIntersectingPoint.clone());
+                unblockedShadowGeometry.vertices.push(cameraIntersectingPoint.clone().add(rayDirection.multiplyScalar(t)));
+            } else {
+                blockedShadowGeometry.vertices.push(cameraIntersectingPoint.clone());
+                blockedShadowGeometry.vertices.push(cameraIntersectingPoint.clone().add(rayDirection.multiplyScalar(t)));
+            }
+        }
+        let material = new THREE.LineBasicMaterial({color:0xffffff});
+        let unblockedShadowMesh = new THREE.LineSegments(unblockedShadowGeometry, material);
+        let blockedShadowMesh = new THREE.LineSegments(blockedShadowGeometry, material);
+
+        this.blockedShadowScene.add(blockedShadowMesh);
+        this.unblockedShadowScene.add(unblockedShadowMesh);
     }
 
     createPointLightGeometry(pointLight, objects) {
