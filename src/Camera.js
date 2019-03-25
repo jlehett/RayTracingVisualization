@@ -12,6 +12,10 @@ class Camera {
 
         this.intersectingList = [];
         this.intersectingPushBack = 0.01; // This affects how far intersecting vertices are pushed back from where they intersect (to help with shadow rays)
+
+        this.intersectingDotScene = new THREE.Scene();
+        this.intersectingScene = new THREE.Scene();
+        this.nonintersectingScene = new THREE.Scene();
     }
 
     updateCamera() {
@@ -57,14 +61,17 @@ class Camera {
         return this.camera.getWorldDirection(vector).normalize();
     }
 
-    createRayTracedCameraGeometry(objects, displayIntersect) {
+    createRayTracedCameraGeometry(objects) {
         // Create the camera geometry for the raytraced camera.
+        this.intersectingScene = new THREE.Scene();
+        this.nonintersectingScene = new THREE.Scene();
 
         this.intersectingList = [];
 
         let rayOrigin = this.position.clone();
         // Create camera (line segments) geometry
-        let cameraGeometry = new THREE.Geometry();
+        let intersectingGeometry = new THREE.Geometry();
+        let nonintersectingGeometry = new THREE.Geometry();
         // Allows access to camera obj in the forEach function
         let thisInstance = this;
         // For every ray
@@ -102,26 +109,43 @@ class Camera {
                 // Append the ray origin and the point on the ray with a distance equal to nearest intersection
                 // distance to the line segments geometry.
                 if (nearestIntersection >= this.farFrustum) {
-                    if (!displayIntersect) {
-                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
-                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.farFrustum)));
-                    }
+                    let nonintersectingPoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.farFrustum));
+                    nonintersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
+                    nonintersectingGeometry.vertices.push(nonintersectingPoint);
                 } else {
-                    if (displayIntersect) {
-                        nearestIntersection -= this.intersectingPushBack;
-                        if (nearestIntersection < 0)
-                            nearestIntersection = 0;
-                        let intersectionPoint = rayOrigin.clone().add(rayDirection.clone().normalize().multiplyScalar(nearestIntersection));
-                        cameraGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
-                        cameraGeometry.vertices.push(intersectionPoint);
-                        // Push the intersection point onto the array.
-                        this.intersectingList.push(intersectionPoint);
-                    }
+                    nearestIntersection -= this.intersectingPushBack;
+                    if (nearestIntersection < 0)
+                        nearestIntersection = 0;
+                    let intersectionPoint = rayOrigin.clone().add(rayDirection.clone().normalize().multiplyScalar(nearestIntersection));
+                    intersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
+                    intersectingGeometry.vertices.push(intersectionPoint);
+                    this.intersectingList.push(intersectionPoint);
                 }
             }
         }
-        // Return the line segments geometry
-        return cameraGeometry;
+
+        let material = new THREE.MeshBasicMaterial({color: 0xffffff});
+        this.intersectingScene.add(new THREE.LineSegments(intersectingGeometry, material));
+        this.nonintersectingScene.add(new THREE.LineSegments(nonintersectingGeometry, material));
+
+        // Create sphere geometry for intersection viewing
+        this.intersectingDotScene = this.createIntersectingScene();
+    }
+
+    createIntersectingScene() {
+        // Create the sphere intersection scene
+        let scene = new THREE.Scene();
+
+        let material = new THREE.MeshBasicMaterial({color: 0xffffff});
+        for (let i = 0; i < this.intersectingList.length; i++) {
+            let center = this.intersectingList[i];
+            let geometry = new THREE.BoxGeometry(0.02, 0.02, 0.02);
+            geometry.translate(center.x, center.y, center.z);
+            let sphere = new THREE.Mesh(geometry, material);
+            this.intersectingScene.add(sphere);
+        }
+
+        return scene;
     }
 
     createCameraOutlineGeometry() {
@@ -191,14 +215,10 @@ class Camera {
         return cameraMesh;
     }
 
-    getCameraMesh() {
+    getCameraMesh(objects) {
         // Place the camera mesh wherever the camera currently is in the world.
-        let cameraPos = this.camera.position.clone();
         this.placeCamera();
-        let geometry = this.createCameraGeometry(cameraPos);
-        let cameraMesh = new THREE.LineSegments(geometry,
-            new THREE.LineBasicMaterial({color:0xffffff}));
-        return cameraMesh;
+        this.createRayTracedCameraGeometry(objects);
     }
 
     getMainCameraPos() {

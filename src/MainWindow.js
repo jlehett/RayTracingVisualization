@@ -28,7 +28,10 @@ class MainWindow {
         }, false);
         // Rays
         this.rays = new THREE.Scene();
-        this.cameraRays = new THREE.Scene();
+        this.cameraBoundary = new THREE.Scene();
+        this.intersectingCameraDots = new THREE.Scene();
+        this.intersectingCameraRays = new THREE.Scene();
+        this.nonintersectingCameraRays = new THREE.Scene();
         this.shadowRays = new THREE.Scene();
         // Inner mesh and outer meshes are rendered in two separate passes to give
         // transparent effect.
@@ -86,16 +89,26 @@ class MainWindow {
         });
     }
 
-    rayTraceCamera(displayIntersect, displayShadowRays) {
+    setGUI(gui) {
+        this.gui = gui;
+    }
+
+    rayTraceCamera() {
         // Ray trace the current camera obj
-        this.intersectingCameraRays = [];
-        this.cameraRays = new THREE.Scene();
-        let cameraMesh = this.cameraObj.getRayTracedCameraMesh(this.objects, displayIntersect);
+        this.intersectingCameraRays = new THREE.Scene();
+        this.nonintersectingCameraRays = new THREE.Scene();
+        this.shadowRays = new THREE.Scene();
+
+        this.cameraObj.getRayTracedCameraMesh(this.objects);
         let cameraOutlineMesh = this.cameraObj.getCameraOutlineMesh();
-        this.cameraRays.add(cameraMesh);
-        this.cameraRays.add(cameraOutlineMesh);
-        if (displayShadowRays)
-            this.rayTracePointLights();
+        this.cameraBoundary = new THREE.Scene();
+        this.cameraBoundary.add(cameraOutlineMesh);
+
+        this.intersectingCameraRays = this.cameraObj.intersectingScene;
+        this.nonintersectingCameraRays = this.cameraObj.nonintersectingScene;
+        this.intersectingCameraDots = this.cameraObj.intersectingDotScene;
+
+        this.rayTracePointLights();
         this.renderThis();
     }
 
@@ -133,12 +146,21 @@ class MainWindow {
     }
 
     placeCameraMesh() {
-        // Place camera mesh wherever the camera currently is in the world.
-        this.cameraRays = new THREE.Scene();
-        let cameraMesh = this.cameraObj.getCameraMesh();
+        // Ray trace the current camera obj
+        this.intersectingCameraRays = new THREE.Scene();
+        this.nonintersectingCameraRays = new THREE.Scene();
+        this.shadowRays = new THREE.Scene();
+
+        this.cameraObj.getCameraMesh(this.objects);
         let cameraOutlineMesh = this.cameraObj.getCameraOutlineMesh();
-        this.cameraRays.add(cameraMesh);
-        this.cameraRays.add(cameraOutlineMesh);
+        this.cameraBoundary = new THREE.Scene();
+        this.cameraBoundary.add(cameraOutlineMesh);
+
+        this.intersectingCameraRays = this.cameraObj.intersectingScene;
+        this.nonintersectingCameraRays = this.cameraObj.nonintersectingScene;
+        this.intersectingCameraDots = this.cameraObj.intersectingDotScene;
+
+        this.rayTracePointLights();
         this.renderThis();
     }
 
@@ -159,12 +181,20 @@ class MainWindow {
         thisInstance.renderer.clear();
 
         // Render all rays first
-        thisInstance.renderer.render(thisInstance.cameraRays, thisInstance.camera);
-        thisInstance.renderer.render(thisInstance.shadowRays, thisInstance.camera);
+        thisInstance.renderer.render(thisInstance.cameraBoundary, thisInstance.camera);
+        if (thisInstance.gui.displayIntersecting) {
+            thisInstance.renderer.render(thisInstance.cameraObj.intersectingDotScene, thisInstance.camera);
+            thisInstance.renderer.render(thisInstance.intersectingCameraRays, thisInstance.camera);
+        }
+        if (!thisInstance.gui.displayIntersecting) {
+            thisInstance.renderer.render(thisInstance.nonintersectingCameraRays, thisInstance.camera);
+        }
+        if (thisInstance.gui.displayShadowRays) {
+            thisInstance.renderer.render(thisInstance.shadowRays, thisInstance.camera);
+        }
+
         thisInstance.renderer.render(thisInstance.pointLightScene, thisInstance.camera);
         thisInstance.renderer.render(thisInstance.rays, thisInstance.camera);
-
-        thisInstance.renderer.render(thisInstance.boundingBoxes, thisInstance.camera);
 
         // Render the outlined meshes using colorMask technique
         let gl = thisInstance.renderer.domElement.getContext('webgl');

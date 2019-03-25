@@ -40,7 +40,7 @@ class GUI {
         this.cameraSettingsFolder.add(this.effectController, 'frustumLength', 1, 4000).name('Frustum Length').onChange(
             function() {
                 mainWindow.cameraObj.farFrustum = thisInstance.effectController['frustumLength'];
-                mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
+                mainWindow.rayTraceCamera();
             }
         )
     }
@@ -52,7 +52,7 @@ class GUI {
             function() {
                 mainWindow.cameraObj.imageHeight = Math.round(thisInstance.effectController['numRaysSent']);
                 mainWindow.cameraObj.imageWidth = Math.round(thisInstance.effectController['numRaysSent']);
-                mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
+                mainWindow.rayTraceCamera();
             }
         )
     }
@@ -115,7 +115,7 @@ class GUI {
         var thisInstance = this;
         let params = {
             rayTraceCamera : function() {
-                mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
+                mainWindow.rayTraceCamera();
             }
         };
         this.gui.add(params, 'rayTraceCamera').name('Ray Trace Camera');
@@ -132,7 +132,7 @@ class GUI {
         this.settingsFolder.add(params, 'Display Intersecting').listen().onFinishChange(
             function() {
                 thisInstance.displayIntersecting = params['Display Intersecting'];
-                mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
+                mainWindow.renderThis();
             }
         )
     }
@@ -147,7 +147,7 @@ class GUI {
         this.settingsFolder.add(params, 'Display Shadow Rays').listen().onFinishChange(
             function() {
                 thisInstance.displayShadowRays = params['Display Shadow Rays'];
-                mainWindow.rayTraceCamera(thisInstance.displayIntersecting, thisInstance.displayShadowRays);
+                mainWindow.renderThis();
             }
         )
     }
