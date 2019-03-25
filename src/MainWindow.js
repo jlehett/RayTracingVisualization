@@ -183,13 +183,17 @@ class MainWindow {
         // Render all rays first
         thisInstance.renderer.render(thisInstance.cameraBoundary, thisInstance.camera);
         if (thisInstance.gui.displayIntersecting) {
-            thisInstance.renderer.render(thisInstance.cameraObj.intersectingDotScene, thisInstance.camera);
-            thisInstance.renderer.render(thisInstance.intersectingCameraRays, thisInstance.camera);
+            if (thisInstance.gui.intersectDots) {
+                thisInstance.renderer.render(thisInstance.intersectingCameraDots, thisInstance.camera);
+            }
+            if (!thisInstance.gui.intersectDots) {
+                thisInstance.renderer.render(thisInstance.intersectingCameraRays, thisInstance.camera);
+            }
         }
         if (!thisInstance.gui.displayIntersecting) {
             thisInstance.renderer.render(thisInstance.nonintersectingCameraRays, thisInstance.camera);
         }
-        if (thisInstance.gui.displayShadowRays) {
+        if (thisInstance.gui.displayShadowRays && thisInstance.gui.displayIntersecting) {
             thisInstance.renderer.render(thisInstance.shadowRays, thisInstance.camera);
         }
 

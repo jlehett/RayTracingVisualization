@@ -12,8 +12,9 @@ class GUI {
             numRaysSent: 20
         };
 
-        this.displayIntersecting = false;
-        this.displayShadowRays = false;
+        this.displayIntersecting = true;
+        this.intersectDots = true;
+        this.displayShadowRays = true;
         this.renderOutline = true;
 
         this.addFileSelectButton(this.inputTag);
@@ -28,10 +29,15 @@ class GUI {
         this.cameraSettingsFolder = this.settingsFolder.addFolder("Camera Settings");
             this.addFrustumSlider();
             this.addNumRaysSlider();
-        this.addEdgeWidthSlider();
-        this.addOutlineToggle();
-        this.addIntersectToggle();
-        this.addShadowRayToggle();
+            this.displayFolder = this.settingsFolder.addFolder("Display");
+                this.intersectFolder = this.displayFolder.addFolder("Intersecting");
+                    this.addIntersectToggle();
+                    this.addDotToggle();
+                this.shadowFolder = this.displayFolder.addFolder("Shadow");
+                    this.addShadowRayToggle();
+                this.miscFolder = this.displayFolder.addFolder("Misc");
+                    this.addEdgeWidthSlider();
+                    this.addOutlineToggle();
     }
 
     addFrustumSlider() {
@@ -59,7 +65,7 @@ class GUI {
 
     addEdgeWidthSlider() {
         var thisInstance = this;
-        this.settingsFolder.add(this.effectController, 'edgeWidth', 0.000001, 1.0).name('Edge Width').onChange(
+        this.miscFolder.add(this.effectController, 'edgeWidth', 0.000001, 1.0).name('Edge Width').onChange(
             function() {
                 thisInstance.mainWindow.changeEdgeSize(thisInstance.effectController.edgeWidth);
             }
@@ -127,11 +133,26 @@ class GUI {
         var mainWindow = this.mainWindow;
         var thisInstance = this;
         let params = {
-            'Display Intersecting':this.displayIntersecting
+            'On':this.displayIntersecting
         }
-        this.settingsFolder.add(params, 'Display Intersecting').listen().onFinishChange(
+        this.intersectFolder.add(params, 'On').listen().onFinishChange(
             function() {
-                thisInstance.displayIntersecting = params['Display Intersecting'];
+                thisInstance.displayIntersecting = params['On'];
+                mainWindow.renderThis();
+            }
+        )
+    }
+
+    addDotToggle() {
+        // Checkbox that allows you to select whether to use dots or rays for intersection points
+        var mainWindow = this.mainWindow;
+        var thisInstance = this;
+        let params = {
+            'Dots':this.intersectDots
+        }
+        this.intersectFolder.add(params, 'Dots').listen().onFinishChange(
+            function() {
+                thisInstance.intersectDots = params['Dots'];
                 mainWindow.renderThis();
             }
         )
@@ -142,11 +163,11 @@ class GUI {
         var mainWindow = this.mainWindow;
         var thisInstance = this;
         let params = {
-            'Display Shadow Rays':this.displayIntersecting
+            'On':this.displayIntersecting
         }
-        this.settingsFolder.add(params, 'Display Shadow Rays').listen().onFinishChange(
+        this.shadowFolder.add(params, 'On').listen().onFinishChange(
             function() {
-                thisInstance.displayShadowRays = params['Display Shadow Rays'];
+                thisInstance.displayShadowRays = params['On'];
                 mainWindow.renderThis();
             }
         )
@@ -159,7 +180,7 @@ class GUI {
         let params = {
             'Render Outline':this.renderOutline
         }
-        this.settingsFolder.add(params, 'Render Outline').listen().onFinishChange(
+        this.miscFolder.add(params, 'Render Outline').listen().onFinishChange(
             function() {
                 mainWindow.toggleOutlineRender();
                 mainWindow.renderThis();

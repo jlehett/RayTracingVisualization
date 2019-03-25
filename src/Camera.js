@@ -142,7 +142,7 @@ class Camera {
             let geometry = new THREE.BoxGeometry(0.02, 0.02, 0.02);
             geometry.translate(center.x, center.y, center.z);
             let sphere = new THREE.Mesh(geometry, material);
-            this.intersectingScene.add(sphere);
+            scene.add(sphere);
         }
 
         return scene;
