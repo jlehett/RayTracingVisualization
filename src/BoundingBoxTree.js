@@ -42,7 +42,6 @@ class BoundingBoxTree {
     }
 
     getIntersectionInformation(rayOrigin, rayDirection) {
-        //console.log("Intersection Info: " + this.getIntersectionInformationHelper(rayOrigin, rayDirection, this.root));
         return this.getIntersectionInformationHelper(rayOrigin, rayDirection, this.root);
     }
 

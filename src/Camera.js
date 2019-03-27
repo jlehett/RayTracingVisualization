@@ -10,9 +10,7 @@ class Camera {
         this.position = new THREE.Vector3(0, 0, 0);
         this.updateCamera();
 
-        this.intersectingList = [];
         this.intersectInfoList = [];
-        this.intersectingPushBack = 0.01; // This affects how far intersecting vertices are pushed back from where they intersect (to help with shadow rays)
 
         this.intersectingDotScene = new THREE.Scene();
         this.intersectingScene = new THREE.Scene();
@@ -116,12 +114,8 @@ class Camera {
                     nonintersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
                     nonintersectingGeometry.vertices.push(nonintersectingPoint);
                 } else {
-                    //console.log(nearestIntersectInfo);
-                    nearestIntersectInfo.distance -= this.intersectingPushBack;
-                    if (nearestIntersectInfo.distance < 0)
-                        nearestIntersectInfo.distance = 0;
                     intersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
-                    intersectingGeometry.vertices.push(nearestIntersectInfo.distance);
+                    intersectingGeometry.vertices.push(nearestIntersectInfo.intersectPoint);
                     this.intersectInfoList.push(nearestIntersectInfo);
                 }
             }
@@ -143,7 +137,7 @@ class Camera {
         for (let i = 0; i < this.intersectInfoList.length; i++) {
             let intersectInfo = this.intersectInfoList[i];
             let center = intersectInfo.intersectPoint;
-            let geometry = new THREE.CircleGeometry(0.01, 5);
+            let geometry = new THREE.CircleGeometry(0.02, 5);
             geometry.lookAt(intersectInfo.normal);
             geometry.translate(center.x, center.y, center.z);
             let disc = new THREE.Mesh(geometry, material);
