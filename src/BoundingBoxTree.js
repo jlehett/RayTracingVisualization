@@ -49,7 +49,7 @@ class BoundingBoxTree {
     getIntersectionInformationHelper(rayOrigin, rayDirection, root) {
         if (root instanceof BoundingBox) {
             if (!root.hasIntersection(rayOrigin, rayDirection))
-                return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0));
+                return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0));
             let leftMin = this.getIntersectionInformationHelper(rayOrigin, rayDirection, root.left);
             let rightMin = this.getIntersectionInformationHelper(rayOrigin, rayDirection, root.right);
             if (leftMin.distance < rightMin.distance)
@@ -60,7 +60,7 @@ class BoundingBoxTree {
         if (root instanceof Triangle) {
             return root.getIntersectionInformation(rayOrigin, rayDirection);
         }
-        return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0));
+        return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0));
     }
 
     getNearestIntersection(rayOrigin, rayDirection) {

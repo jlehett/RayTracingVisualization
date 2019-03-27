@@ -1,11 +1,8 @@
 class IntersectionInfo {
 
-    constructor(distance, normal) {
+    constructor(distance, normal, intersectPoint) {
         this.distance = distance;
         this.normal = normal;
-    }
-
-    setIntersectionPoint(point) {
-        this.intersectPoint = point;
+        this.intersectPoint = intersectPoint;
     }
 }

@@ -70,7 +70,6 @@ class Camera {
         this.nonintersectingScene = new THREE.Scene();
 
         this.intersectInfoList = [];
-        this.intersectingList = [];
 
         let rayOrigin = this.position.clone();
         // Create camera (line segments) geometry
@@ -81,9 +80,7 @@ class Camera {
         // For every ray
         for (let x = 0; x < this.imageWidth; x++) {
             for (let y = 0; y < this.imageHeight; y++) {
-                let nearestIntersectInfo = new IntersectionInfo(0, new THREE.Vector3(0, 0, 0));
-                // Set nearest intersection to farFrustum (default length of ray)
-                let nearestIntersection = this.farFrustum;
+                let nearestIntersectInfo = new IntersectionInfo(this.farFrustum, new THREE.Vector3(0, 0, 0));
                 // Find ray direction (and apply camera quaternion for proper orientation)
                 let scale = Math.tan(this.fov * 0.5 * Math.PI / 180.0);
                 let Px = (2.0 * (x + 0.5) / this.imageWidth - 1.0) * this.aspect * scale;
@@ -92,47 +89,39 @@ class Camera {
                 rayDirection.applyQuaternion(this.quaternion);
                 // For every object in scene
                 objects.forEach(function(node) {
-                    let intersectionDistance;
                     let intersectInfo;
 
                     // If the object is a sphere
                     if (node instanceof Sphere) {
                         intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize());
-                        intersectionDistance = intersectInfo.distance;
                     }
                     
                     if (node instanceof Triangle) {
                         intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize());
-                        intersectionDistance = intersectInfo.distance;
                     }
 
                     if (node instanceof BoundingBoxTree) {
                         intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize());
-                        intersectionDistance = intersectInfo.distance;
                     }
 
                     // Update nearest intersection if necessary 
-                    if (nearestIntersection > intersectionDistance && intersectionDistance > thisInstance.nearFrustum) {
-                        nearestIntersection = intersectionDistance;
+                    if (nearestIntersectInfo.distance > intersectInfo.distance && intersectInfo.distance > thisInstance.nearFrustum) {
                         nearestIntersectInfo = intersectInfo;
                     }
                 });
                 // Append the ray origin and the point on the ray with a distance equal to nearest intersection
                 // distance to the line segments geometry.
-                if (nearestIntersection >= this.farFrustum) {
+                if (nearestIntersectInfo.distance >= this.farFrustum) {
                     let nonintersectingPoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.farFrustum));
                     nonintersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
                     nonintersectingGeometry.vertices.push(nonintersectingPoint);
                 } else {
                     //console.log(nearestIntersectInfo);
-                    nearestIntersection -= this.intersectingPushBack;
-                    if (nearestIntersection < 0)
-                        nearestIntersection = 0;
-                    let intersectionPoint = rayOrigin.clone().add(rayDirection.clone().normalize().multiplyScalar(nearestIntersection));
+                    nearestIntersectInfo.distance -= this.intersectingPushBack;
+                    if (nearestIntersectInfo.distance < 0)
+                        nearestIntersectInfo.distance = 0;
                     intersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
-                    intersectingGeometry.vertices.push(intersectionPoint);
-                    nearestIntersectInfo.setIntersectionPoint(intersectionPoint);
-                    this.intersectingList.push(intersectionPoint);
+                    intersectingGeometry.vertices.push(nearestIntersectInfo.distance);
                     this.intersectInfoList.push(nearestIntersectInfo);
                 }
             }
@@ -245,8 +234,8 @@ class Camera {
     updateShadowRays(pointLight, objects) {
         let blockedShadowGeometry = new THREE.Geometry();
         let unblockedShadowGeometry = new THREE.Geometry();
-        for (let i = 0; i < this.intersectingList.length; i++) {
-            let cameraIntersectingPoint = this.intersectingList[i];
+        for (let i = 0; i < this.intersectInfoList.length; i++) {
+            let cameraIntersectingPoint = this.intersectInfoList[i].intersectPoint;
             let rayDirection = pointLight.position.clone().add(cameraIntersectingPoint.clone().negate()).normalize();
             let t = pointLight.getNearestIntersection(cameraIntersectingPoint, rayDirection, objects);
             if (!pointLight.hasIntersection(t, cameraIntersectingPoint)) {

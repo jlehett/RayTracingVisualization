@@ -15,7 +15,9 @@ class Triangle {
 
         let normal = (this.v1.clone().add(this.v0.clone().negate())).cross(this.v2.clone().add(this.v0.clone().negate()))
 
-        return new IntersectionInfo(distance, normal);
+        let intersectPoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(distance));
+
+        return new IntersectionInfo(distance, normal, intersectPoint);
     }
 
     getNearestIntersection(rayOrigin, rayDirection) {
