@@ -41,6 +41,28 @@ class BoundingBoxTree {
         this.createMeshHelper(boundingBoxList, level, root.right, currentLevel+1);
     }
 
+    getIntersectionInformation(rayOrigin, rayDirection) {
+        //console.log("Intersection Info: " + this.getIntersectionInformationHelper(rayOrigin, rayDirection, this.root));
+        return this.getIntersectionInformationHelper(rayOrigin, rayDirection, this.root);
+    }
+
+    getIntersectionInformationHelper(rayOrigin, rayDirection, root) {
+        if (root instanceof BoundingBox) {
+            if (!root.hasIntersection(rayOrigin, rayDirection))
+                return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0));
+            let leftMin = this.getIntersectionInformationHelper(rayOrigin, rayDirection, root.left);
+            let rightMin = this.getIntersectionInformationHelper(rayOrigin, rayDirection, root.right);
+            if (leftMin.distance < rightMin.distance)
+                return leftMin;
+            else
+                return rightMin;
+        }
+        if (root instanceof Triangle) {
+            return root.getIntersectionInformation(rayOrigin, rayDirection);
+        }
+        return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0));
+    }
+
     getNearestIntersection(rayOrigin, rayDirection) {
         return this.getNearestIntersectionHelper(rayOrigin, rayDirection, this.root);
     }

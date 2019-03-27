@@ -11,6 +11,7 @@ class Camera {
         this.updateCamera();
 
         this.intersectingList = [];
+        this.intersectInfoList = [];
         this.intersectingPushBack = 0.01; // This affects how far intersecting vertices are pushed back from where they intersect (to help with shadow rays)
 
         this.intersectingDotScene = new THREE.Scene();
@@ -68,6 +69,7 @@ class Camera {
         this.intersectingScene = new THREE.Scene();
         this.nonintersectingScene = new THREE.Scene();
 
+        this.intersectInfoList = [];
         this.intersectingList = [];
 
         let rayOrigin = this.position.clone();
@@ -79,6 +81,7 @@ class Camera {
         // For every ray
         for (let x = 0; x < this.imageWidth; x++) {
             for (let y = 0; y < this.imageHeight; y++) {
+                let nearestIntersectInfo = new IntersectionInfo(0, new THREE.Vector3(0, 0, 0));
                 // Set nearest intersection to farFrustum (default length of ray)
                 let nearestIntersection = this.farFrustum;
                 // Find ray direction (and apply camera quaternion for proper orientation)
@@ -90,23 +93,29 @@ class Camera {
                 // For every object in scene
                 objects.forEach(function(node) {
                     let intersectionDistance;
+                    let intersectInfo;
 
                     // If the object is a sphere
                     if (node instanceof Sphere) {
-                        intersectionDistance = node.getNearestIntersection(rayOrigin.clone(), rayDirection.clone().normalize());
+                        intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize());
+                        intersectionDistance = intersectInfo.distance;
                     }
                     
                     if (node instanceof Triangle) {
-                        intersectionDistance = node.getNearestIntersection(rayOrigin.clone(), rayDirection.clone().normalize());
+                        intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize());
+                        intersectionDistance = intersectInfo.distance;
                     }
 
                     if (node instanceof BoundingBoxTree) {
-                        intersectionDistance = node.getNearestIntersection(rayOrigin.clone(), rayDirection.clone().normalize());
+                        intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize());
+                        intersectionDistance = intersectInfo.distance;
                     }
 
                     // Update nearest intersection if necessary 
-                    if (nearestIntersection > intersectionDistance && intersectionDistance > thisInstance.nearFrustum)
+                    if (nearestIntersection > intersectionDistance && intersectionDistance > thisInstance.nearFrustum) {
                         nearestIntersection = intersectionDistance;
+                        nearestIntersectInfo = intersectInfo;
+                    }
                 });
                 // Append the ray origin and the point on the ray with a distance equal to nearest intersection
                 // distance to the line segments geometry.
@@ -115,13 +124,16 @@ class Camera {
                     nonintersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
                     nonintersectingGeometry.vertices.push(nonintersectingPoint);
                 } else {
+                    //console.log(nearestIntersectInfo);
                     nearestIntersection -= this.intersectingPushBack;
                     if (nearestIntersection < 0)
                         nearestIntersection = 0;
                     let intersectionPoint = rayOrigin.clone().add(rayDirection.clone().normalize().multiplyScalar(nearestIntersection));
                     intersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
                     intersectingGeometry.vertices.push(intersectionPoint);
+                    nearestIntersectInfo.setIntersectionPoint(intersectionPoint);
                     this.intersectingList.push(intersectionPoint);
+                    this.intersectInfoList.push(nearestIntersectInfo);
                 }
             }
         }
@@ -139,12 +151,14 @@ class Camera {
         let scene = new THREE.Scene();
 
         let material = new THREE.MeshBasicMaterial({color: 0xffffff});
-        for (let i = 0; i < this.intersectingList.length; i++) {
-            let center = this.intersectingList[i];
-            let geometry = new THREE.BoxGeometry(0.02, 0.02, 0.02);
+        for (let i = 0; i < this.intersectInfoList.length; i++) {
+            let intersectInfo = this.intersectInfoList[i];
+            let center = intersectInfo.intersectPoint;
+            let geometry = new THREE.CircleGeometry(0.01, 5);
+            geometry.lookAt(intersectInfo.normal);
             geometry.translate(center.x, center.y, center.z);
-            let sphere = new THREE.Mesh(geometry, material);
-            scene.add(sphere);
+            let disc = new THREE.Mesh(geometry, material);
+            scene.add(disc);
         }
 
         return scene;

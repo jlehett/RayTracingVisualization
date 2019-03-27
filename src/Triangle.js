@@ -9,6 +9,15 @@ class Triangle {
         this.v2 = vertex3;
     }
 
+    getIntersectionInformation(rayOrigin, rayDirection)
+    {
+        let distance = this.getNearestIntersection(rayOrigin, rayDirection);
+
+        let normal = (this.v1.clone().add(this.v0.clone().negate())).cross(this.v2.clone().add(this.v0.clone().negate()))
+
+        return new IntersectionInfo(distance, normal);
+    }
+
     getNearestIntersection(rayOrigin, rayDirection) {
         let edge1 = this.v1.clone().add(this.v0.clone().negate());
         let edge2 = this.v2.clone().add(this.v0.clone().negate());

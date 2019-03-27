@@ -7,6 +7,16 @@ class Sphere {
         this.radius = radius;
     }
 
+    getIntersectionInformation(rayOrigin, rayDirection)
+    {
+        let distance = this.getNearestIntersection(rayOrigin, rayDirection);
+
+        let pointOnSphere = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(distance))
+        let normal = (pointOnSphere.clone().add(this.center.clone().negate())).normalize();
+
+        return new IntersectionInfo(distance, normal);
+    }
+
     getNearestIntersection(rayOrigin, rayDirection) {
         let closeEnough = false;
         // Get the vector going from ray origin to sphere center
