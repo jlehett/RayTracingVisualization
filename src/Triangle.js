@@ -30,6 +30,8 @@ class Triangle {
     }
 
     getNearestIntersection(rayOrigin, rayDirection) {
+        this.precompute();
+
         let h = rayDirection.clone().cross(this.edge2);
         let a = this.edge1.dot(h);
         if (a > -EPSILON && a < EPSILON) {
