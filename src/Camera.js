@@ -75,12 +75,13 @@ class Camera {
         let nonintersectingGeometry = new THREE.Geometry();
         // Allows access to camera obj in the forEach function
         let thisInstance = this;
+        // Precompute some variables
+        let scale = Math.tan(this.fov * 0.5 * Math.PI / 180.0);
         // For every ray
         for (let x = 0; x < this.imageWidth; x++) {
             for (let y = 0; y < this.imageHeight; y++) {
                 let nearestIntersectInfo = new IntersectionInfo(this.farFrustum, new THREE.Vector3(0, 0, 0));
                 // Find ray direction (and apply camera quaternion for proper orientation)
-                let scale = Math.tan(this.fov * 0.5 * Math.PI / 180.0);
                 let Px = (2.0 * (x + 0.5) / this.imageWidth - 1.0) * this.aspect * scale;
                 let Py = (1.0 - 2.0 * (y + 0.5) / this.imageHeight) * scale;
                 let rayDirection = new THREE.Vector3(Px, Py, -1);
@@ -137,7 +138,7 @@ class Camera {
         for (let i = 0; i < this.intersectInfoList.length; i++) {
             let intersectInfo = this.intersectInfoList[i];
             let center = intersectInfo.intersectPoint;
-            let geometry = new THREE.CircleGeometry(0.02, 5);
+            let geometry = new THREE.PlaneGeometry(0.02, 0.02);
             geometry.lookAt(intersectInfo.normal);
             geometry.translate(center.x, center.y, center.z);
             let disc = new THREE.Mesh(geometry, material);

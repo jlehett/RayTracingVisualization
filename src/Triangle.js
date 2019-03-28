@@ -9,37 +9,44 @@ class Triangle {
         this.v2 = vertex3;
     }
 
+    precompute() {
+        if (!this.negativeV0) {
+            this.negativeV0 = this.v0.clone().negate();
+            this.edge1 = this.negativeV0.clone().add(this.v1);
+            this.edge2 = this.negativeV0.clone().add(this.v2);
+            this.normal = (this.negativeV0.clone().add(this.v1)).cross(this.negativeV0.clone().add(this.v2));
+        }
+    }
+
     getIntersectionInformation(rayOrigin, rayDirection)
     {
+        this.precompute();
+
         let distance = this.getNearestIntersection(rayOrigin, rayDirection);
-
-        let normal = (this.v1.clone().add(this.v0.clone().negate())).cross(this.v2.clone().add(this.v0.clone().negate()))
-
+        let normal = this.normal;
         let intersectPoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(distance));
 
         return new IntersectionInfo(distance, normal, intersectPoint);
     }
 
     getNearestIntersection(rayOrigin, rayDirection) {
-        let edge1 = this.v1.clone().add(this.v0.clone().negate());
-        let edge2 = this.v2.clone().add(this.v0.clone().negate());
-        let h = rayDirection.clone().cross(edge2.clone());
-        let a = edge1.dot(h);
+        let h = rayDirection.clone().cross(this.edge2);
+        let a = this.edge1.dot(h);
         if (a > -EPSILON && a < EPSILON) {
             return MAX_DISTANCE;
         }
         let f = 1.0 / a;
-        let s = rayOrigin.clone().add(this.v0.clone().negate());
+        let s = this.negativeV0.clone().add(rayOrigin);
         let u = f * (s.dot(h));
         if (u < 0.0 || u > 1.0) {
             return MAX_DISTANCE;
         }
-        let q = s.clone().cross(edge1.clone());
+        let q = s.cross(this.edge1);
         let v = f * rayDirection.dot(q);
         if (v < 0.0 || u + v > 1.0) {
             return MAX_DISTANCE;
         }
-        let t = f * edge2.dot(q);
+        let t = f * this.edge2.dot(q);
         if (t > EPSILON) // ray intersection
         {
             return t;
