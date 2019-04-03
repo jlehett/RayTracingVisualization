@@ -1,7 +1,7 @@
 class IntersectionInfo {
 
     constructor(distance, normal, intersectPoint) {
-        let INTERSECT_PUSH_BACK = 0.2;
+        let INTERSECT_PUSH_BACK = 0.002;
 
         this.distance = distance;
         this.normal = normal;

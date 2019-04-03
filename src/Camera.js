@@ -116,7 +116,7 @@ class Camera {
                     nonintersectingGeometry.vertices.push(nonintersectingPoint);
                 } else {
                     intersectingGeometry.vertices.push(rayOrigin.clone().add(rayDirection.clone().multiplyScalar(this.nearFrustum)));
-                    intersectingGeometry.vertices.push(nearestIntersectInfo.intersectPoint);
+                    intersectingGeometry.vertices.push(nearestIntersectInfo.intersectPoint.clone());
                     this.intersectInfoList.push(nearestIntersectInfo);
                 }
             }
