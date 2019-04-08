@@ -17,6 +17,8 @@ class Camera {
         this.nonintersectingScene = new THREE.Scene();
         this.blockedShadowScene = new THREE.Scene();
         this.unblockedShadowScene = new THREE.Scene();
+
+        this.background = new THREE.Color(0.2, 0.2, 0.2);
     }
 
     updateCamera() {
@@ -80,7 +82,7 @@ class Camera {
         // For every ray
         for (let x = 0; x < this.imageWidth; x++) {
             for (let y = 0; y < this.imageHeight; y++) {
-                let nearestIntersectInfo = new IntersectionInfo(this.farFrustum, new THREE.Vector3(0, 0, 0));
+                let nearestIntersectInfo = new IntersectionInfo(this.farFrustum, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), new Lambert(new THREE.Color(0, 0, 0)));
                 // Find ray direction (and apply camera quaternion for proper orientation)
                 let Px = (2.0 * (x + 0.5) / this.imageWidth - 1.0) * this.aspect * scale;
                 let Py = (1.0 - 2.0 * (y + 0.5) / this.imageHeight) * scale;
@@ -126,19 +128,26 @@ class Camera {
         this.intersectingScene.add(new THREE.LineSegments(intersectingGeometry, material));
         this.nonintersectingScene.add(new THREE.LineSegments(nonintersectingGeometry, material));
 
-        // Create sphere geometry for intersection viewing
-        this.intersectingDotScene = this.createIntersectingScene();
+        this.applyBackgroundColor();
     }
 
-    createIntersectingScene() {
-        // Create the sphere intersection scene
-        let scene = new THREE.Scene();
-
-        let material = new THREE.MeshBasicMaterial({color: 0xffffff});
+    applyBackgroundColor() {
         for (let i = 0; i < this.intersectInfoList.length; i++) {
             let intersectInfo = this.intersectInfoList[i];
+            let color = intersectInfo.material.color;
+            let darkColor = new THREE.Color(color.r * this.background.r, color.g * this.background.g, color.b * this.background.b);
+            intersectInfo.applyDarkness(darkColor);
+        }
+    }
+
+    createIntersectScene() {
+        let scene = new THREE.Scene();
+
+        for (let i = 0; i < this.intersectInfoList.length; i++) {
+            let intersectInfo = this.intersectInfoList[i];
+            let material = new THREE.MeshBasicMaterial({color: intersectInfo.material.color});
             let center = intersectInfo.intersectPoint;
-            let geometry = new THREE.PlaneGeometry(0.02, 0.02);
+            let geometry = new THREE.CircleGeometry(0.02, 10);
             geometry.lookAt(intersectInfo.normal);
             geometry.translate(center.x, center.y, center.z);
             let disc = new THREE.Mesh(geometry, material);
@@ -236,12 +245,15 @@ class Camera {
             if (!pointLight.hasIntersection(t, cameraIntersectingPoint)) {
                 unblockedShadowGeometry.vertices.push(cameraIntersectingPoint.clone());
                 unblockedShadowGeometry.vertices.push(cameraIntersectingPoint.clone().add(rayDirection.multiplyScalar(t)));
+                // Add to intersecting dot scene
+                let intersectInfo = this.intersectInfoList[i];
+                intersectInfo.calculateLighting(pointLight);
             } else {
                 blockedShadowGeometry.vertices.push(cameraIntersectingPoint.clone());
                 blockedShadowGeometry.vertices.push(cameraIntersectingPoint.clone().add(rayDirection.multiplyScalar(t)));
             }
         }
-        let material = new THREE.LineBasicMaterial({color:0xffffff});
+        let material = new THREE.LineBasicMaterial({color:pointLight.color});
         let unblockedShadowMesh = new THREE.LineSegments(unblockedShadowGeometry, material);
         let blockedShadowMesh = new THREE.LineSegments(blockedShadowGeometry, material);
 

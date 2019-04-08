@@ -1,7 +1,9 @@
 class PointLight {
 
-    constructor(position) {
+    constructor(position, color, intensity) {
         this.position = position;
+        this.color = color;
+        this.intensity = intensity;
         this.mesh = this.createMesh();
     }
 
@@ -9,7 +11,7 @@ class PointLight {
         let geometry = new THREE.SphereGeometry(0.1, 10, 10);
         geometry.translate(this.position.x, this.position.y, this.position.z);
         let mesh = new THREE.Mesh(geometry,
-            new THREE.LineBasicMaterial({color:0xffffff})
+            new THREE.LineBasicMaterial({color:this.color})
         );
         return mesh;
     }

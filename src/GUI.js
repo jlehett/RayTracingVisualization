@@ -113,7 +113,10 @@ class GUI {
         var mainWindow = this.mainWindow;
         let params = {
             placePointLight : function() {
-                mainWindow.placePointLight();
+                mainWindow.placePointLight(
+                    new THREE.Color(1.0, 1.0, 1.0),
+                    1.0
+                );
             }
         };
         this.placeLightsFolder.add(params, 'placePointLight').name('Place Point Light');

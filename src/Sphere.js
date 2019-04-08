@@ -2,9 +2,10 @@ var MAX_DISTANCE = 10000000;
 
 class Sphere {
 
-    constructor(center, radius) {
+    constructor(center, radius, material) {
         this.center = center;
         this.radius = radius;
+        this.material = material;
     }
 
     getIntersectionInformation(rayOrigin, rayDirection)
@@ -14,7 +15,7 @@ class Sphere {
         let pointOnSphere = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(distance))
         let normal = (pointOnSphere.clone().add(this.center.clone().negate())).normalize();
 
-        return new IntersectionInfo(distance, normal, pointOnSphere);
+        return new IntersectionInfo(distance, normal, pointOnSphere, this.material);
     }
 
     getNearestIntersection(rayOrigin, rayDirection) {

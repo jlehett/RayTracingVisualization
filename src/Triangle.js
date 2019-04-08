@@ -3,10 +3,11 @@ var MAX_DISTANCE = 10000000;
 
 class Triangle {
 
-    constructor(vertex1, vertex2, vertex3) {
+    constructor(vertex1, vertex2, vertex3, material) {
         this.v0 = vertex1;
         this.v1 = vertex2;
         this.v2 = vertex3;
+        this.material = material
     }
 
     precompute() {
@@ -14,7 +15,7 @@ class Triangle {
             this.negativeV0 = this.v0.clone().negate();
             this.edge1 = this.negativeV0.clone().add(this.v1);
             this.edge2 = this.negativeV0.clone().add(this.v2);
-            this.normal = (this.negativeV0.clone().add(this.v1)).cross(this.negativeV0.clone().add(this.v2));
+            this.normal = (this.negativeV0.clone().add(this.v1)).cross(this.negativeV0.clone().add(this.v2)).normalize();
         }
     }
 
@@ -26,7 +27,7 @@ class Triangle {
         let normal = this.normal;
         let intersectPoint = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(distance));
 
-        return new IntersectionInfo(distance, normal, intersectPoint);
+        return new IntersectionInfo(distance, normal, intersectPoint, this.material);
     }
 
     getNearestIntersection(rayOrigin, rayDirection) {

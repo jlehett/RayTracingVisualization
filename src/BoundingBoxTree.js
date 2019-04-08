@@ -2,15 +2,16 @@ var MAX_DISTANCE = 10000000;
 
 class BoundingBoxTree {
 
-    constructor(numTriangles) {
+    constructor(numTriangles, material) {
         // Construct a BST style bounding box data structure for fast ray-triangle intersection detection.
         this.numTriangles = numTriangles;
-        this.root = new BoundingBox(this.numTriangles);
+        this.root = new BoundingBox(this.numTriangles, material);
+        this.material = material
     }
 
     addTriangle(v1, v2, v3) {
         // Add a triangle to the binary search tree (this call handles all placements appropriately)
-        this.root.addTriangle(v1, v2, v3);
+        this.root.addTriangle(v1, v2, v3, this.material);
     }
 
     computeBoundingBoxes() {
@@ -48,7 +49,7 @@ class BoundingBoxTree {
     getIntersectionInformationHelper(rayOrigin, rayDirection, root) {
         if (root instanceof BoundingBox) {
             if (!root.hasIntersection(rayOrigin, rayDirection))
-                return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0));
+                return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), this.material);
             let leftMin = this.getIntersectionInformationHelper(rayOrigin, rayDirection, root.left);
             let rightMin = this.getIntersectionInformationHelper(rayOrigin, rayDirection, root.right);
             if (leftMin.distance < rightMin.distance)
@@ -59,7 +60,7 @@ class BoundingBoxTree {
         if (root instanceof Triangle) {
             return root.getIntersectionInformation(rayOrigin, rayDirection);
         }
-        return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0));
+        return new IntersectionInfo(MAX_DISTANCE, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0), this.material);
     }
 
     getNearestIntersection(rayOrigin, rayDirection) {
@@ -83,7 +84,7 @@ class BoundingBoxTree {
 
 class BoundingBox {
 
-    constructor(numTrianglesHere) {
+    constructor(numTrianglesHere, material) {
         // Construct a bounding box node for the BoundingBoxTree.
         this.maxX = -MAX_DISTANCE;
         this.maxY = -MAX_DISTANCE;
@@ -115,9 +116,11 @@ class BoundingBox {
                     this.right = new BoundingBox(this.numTrianglesRight);
             }
         }
+
+        this.material = material;
     }
 
-    addTriangle(v1, v2, v3) {
+    addTriangle(v1, v2, v3, material) {
         // Recursively add the specified triangle (given by the three vertices the make up the triangle)
         // to this bounding box node as well as either the left or right children (BST style)
         let vectorList = [v1, v2, v3];
@@ -139,14 +142,14 @@ class BoundingBox {
             if (this.triangleCounter < this.numTrianglesLeft)
             {
                 if (this.left instanceof Triangle)
-                    this.left = new Triangle(v1, v2, v3);
+                    this.left = new Triangle(v1, v2, v3, material);
                 else
-                    this.left.addTriangle(v1, v2, v3);
+                    this.left.addTriangle(v1, v2, v3, material);
             } else {
                 if (this.right instanceof Triangle)
-                    this.right = new Triangle(v1, v2, v3);
+                    this.right = new Triangle(v1, v2, v3, material);
                 else
-                    this.right.addTriangle(v1, v2, v3);
+                    this.right.addTriangle(v1, v2, v3, material);
             }
         }
         

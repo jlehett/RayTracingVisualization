@@ -107,9 +107,9 @@ class MainWindow {
 
         this.intersectingCameraRays = this.cameraObj.intersectingScene;
         this.nonintersectingCameraRays = this.cameraObj.nonintersectingScene;
-        this.intersectingCameraDots = this.cameraObj.intersectingDotScene;
-
+        
         this.rayTracePointLights();
+        this.intersectingCameraDots = this.cameraObj.intersectingDotScene;
         this.renderThis();
     }
 
@@ -123,7 +123,7 @@ class MainWindow {
         }
         this.blockedShadowRays = this.cameraObj.blockedShadowScene;
         this.unblockedShadowRays = this.cameraObj.unblockedShadowScene;
-        this.renderThis();
+        this.cameraObj.intersectingDotScene = this.cameraObj.createIntersectScene();
     }
 
     rayTracePointLight(pointLight) {
@@ -150,27 +150,14 @@ class MainWindow {
 
     placeCameraMesh() {
         // Ray trace the current camera obj
-        this.intersectingCameraRays = new THREE.Scene();
-        this.nonintersectingCameraRays = new THREE.Scene();
-        this.shadowRays = new THREE.Scene();
-
         this.cameraObj.getCameraMesh(this.objects);
-        let cameraOutlineMesh = this.cameraObj.getCameraOutlineMesh();
-        this.cameraBoundary = new THREE.Scene();
-        this.cameraBoundary.add(cameraOutlineMesh);
-
-        this.intersectingCameraRays = this.cameraObj.intersectingScene;
-        this.nonintersectingCameraRays = this.cameraObj.nonintersectingScene;
-        this.intersectingCameraDots = this.cameraObj.intersectingDotScene;
-
-        this.rayTracePointLights();
-        this.renderThis();
+        this.rayTraceCamera();
     }
 
-    placePointLight() {
+    placePointLight(color, intensity) {
         // Place point light wherever the camera currently is in the world.
         let position = this.cameraObj.getMainCameraPos();
-        let pointLight = new PointLight(position);
+        let pointLight = new PointLight(position, color, intensity);
         let pointLightMesh = pointLight.mesh;
         this.pointLights.push(pointLight);
         this.pointLightScene.add(pointLightMesh);
@@ -319,7 +306,8 @@ class MainWindow {
             // Create sphere object for ray intersection detection
             this.objects.push(new Sphere(
                 new THREE.Vector3(object.quadruples[i], object.quadruples[i+1], object.quadruples[i+2]),
-                object.quadruples[i+3]
+                object.quadruples[i+3],
+                new Lambert(new THREE.Color(1.0, 1.0, 1.0))
             ));
         }
     }
@@ -369,7 +357,9 @@ class MainWindow {
 
             // Create triangle object for ray intersection detection
             for (let i = 0; i < geometry.vertices.length-2; i++) {
-                this.objects.push(new Triangle(geometry.vertices[i], geometry.vertices[i+1], geometry.vertices[i+2]));
+                this.objects.push(new Triangle(geometry.vertices[i], geometry.vertices[i+1], geometry.vertices[i+2],
+                    new THREE.Vector3(1.0, 1.0, 1.0)
+                ));
             }
 
             // Color index needs to be bumped up by 3 for next mesh (each mesh has r, g, b values for color)
@@ -429,7 +419,7 @@ class MainWindow {
 
                         // Create BoundingBoxTree (for efficient ray-triangle intersection)
                         let numTriangles = positions.length / 9.0;
-                        let BBTree = new BoundingBoxTree(numTriangles);
+                        let BBTree = new BoundingBoxTree(numTriangles, new Lambert(new THREE.Color(1.0, 1.0, 1.0)));
 
                         for (let i = 0; i < positions.length; i += 9) {
                             let v1 = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
