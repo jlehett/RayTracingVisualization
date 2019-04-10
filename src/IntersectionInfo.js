@@ -12,6 +12,7 @@ class IntersectionInfo {
     }
 
     applyDarkness(color) {
+        this.material.baseColor = color;
         this.material.color = color;
     }
 

@@ -147,7 +147,7 @@ class Camera {
             let intersectInfo = this.intersectInfoList[i];
             let material = new THREE.MeshBasicMaterial({color: intersectInfo.material.color});
             let center = intersectInfo.intersectPoint;
-            let geometry = new THREE.CircleGeometry(0.02, 10);
+            let geometry = new THREE.CircleGeometry(0.005, 10);
             geometry.lookAt(intersectInfo.normal);
             geometry.translate(center.x, center.y, center.z);
             let disc = new THREE.Mesh(geometry, material);

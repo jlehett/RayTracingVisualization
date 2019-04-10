@@ -7,6 +7,10 @@ class PointLight {
         this.mesh = this.createMesh();
     }
 
+    getIntensity(distance) {
+        return Math.max(0.0, this.intensity - distance);
+    }
+
     createMesh() {
         let geometry = new THREE.SphereGeometry(0.1, 10, 10);
         geometry.translate(this.position.x, this.position.y, this.position.z);

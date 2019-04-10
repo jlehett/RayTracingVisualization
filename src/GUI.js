@@ -115,7 +115,7 @@ class GUI {
             placePointLight : function() {
                 mainWindow.placePointLight(
                     new THREE.Color(1.0, 1.0, 1.0),
-                    1.0
+                    10.0
                 );
             }
         };
