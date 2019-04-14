@@ -26,6 +26,7 @@ class GUI {
         this.addCameraPlaceButton();
         this.placeLightsFolder = this.placeFolder.addFolder("Lights");
         this.addPointLightPlaceButton();
+        this.addMetaballPlaceButton();
 
         this.settingsFolder = this.gui.addFolder("Settings");
         this.cameraSettingsFolder = this.settingsFolder.addFolder("Camera Settings");
@@ -120,6 +121,17 @@ class GUI {
             }
         };
         this.placeLightsFolder.add(params, 'placePointLight').name('Place Point Light');
+    }
+
+    addMetaballPlaceButton() {
+        // Place a metaball in the world.
+        var mainWindow = this.mainWindow;
+        let params = {
+            placeMetaBall : function() {
+                mainWindow.placeMetaball();
+            }
+        };
+        this.placeFolder.add(params, 'placeMetaBall').name('Place Metaball');
     }
 
     addRayTraceCameraButton() {

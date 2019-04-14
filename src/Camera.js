@@ -87,6 +87,7 @@ class Camera {
                 let Px = (2.0 * (x + 0.5) / this.imageWidth - 1.0) * this.aspect * scale;
                 let Py = (1.0 - 2.0 * (y + 0.5) / this.imageHeight) * scale;
                 let rayDirection = new THREE.Vector3(Px, Py, -1);
+                var farFrustum = this.farFrustum
                 rayDirection.applyQuaternion(this.quaternion);
                 // For every object in scene
                 objects.forEach(function(node) {
@@ -103,6 +104,10 @@ class Camera {
 
                     if (node instanceof BoundingBoxTree) {
                         intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize());
+                    }
+
+                    if (node instanceof Metaballs) {
+                        intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize(), farFrustum);
                     }
 
                     // Update nearest intersection if necessary 
@@ -147,7 +152,8 @@ class Camera {
             let intersectInfo = this.intersectInfoList[i];
             let material = new THREE.MeshBasicMaterial({color: intersectInfo.material.color});
             let center = intersectInfo.intersectPoint;
-            let geometry = new THREE.CircleGeometry(0.005, 10);
+            //let geometry = new THREE.CircleGeometry(0.005, 10);
+            let geometry = new THREE.BoxGeometry(0.05, 0.05, 0.05);
             geometry.lookAt(intersectInfo.normal);
             geometry.translate(center.x, center.y, center.z);
             let disc = new THREE.Mesh(geometry, material);

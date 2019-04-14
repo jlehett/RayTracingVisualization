@@ -12,7 +12,7 @@ class Sphere {
     {
         let distance = this.getNearestIntersection(rayOrigin, rayDirection);
 
-        let pointOnSphere = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(distance))
+        let pointOnSphere = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(distance));
         let normal = (pointOnSphere.clone().add(this.center.clone().negate())).normalize();
 
         return new IntersectionInfo(distance, normal, pointOnSphere, this.material);

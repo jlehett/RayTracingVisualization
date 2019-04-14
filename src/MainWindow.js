@@ -43,6 +43,8 @@ class MainWindow {
 
         // Objects for ray intersection detection
         this.objects = [];
+        this.metaballs = new Metaballs(new Lambert(new THREE.Color(1.0, 1.0, 1.0)));
+        this.objects.push(this.metaballs);
 
         // Bounding Box Visualizations for triangle-ray intersection
         this.boundingBoxes = new THREE.Scene();
@@ -161,6 +163,13 @@ class MainWindow {
         let pointLightMesh = pointLight.mesh;
         this.pointLights.push(pointLight);
         this.pointLightScene.add(pointLightMesh);
+        this.renderThis();
+    }
+
+    placeMetaball() {
+        // Place metaball wherever the camera currently is in the world.
+        let position = this.cameraObj.getMainCameraPos();
+        this.metaballs.addMetaBall(position, 0.05);
         this.renderThis();
     }
 
