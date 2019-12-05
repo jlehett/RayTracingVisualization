@@ -12,8 +12,6 @@ class Lambert {
         let distance = L.length();
         L = L.normalize();
         let intensityDiffuse = L.dot(intersectInfo.normal) * pointLight.getIntensity(distance);
-        if (intensityDiffuse > 1.0)
-            console.log(intensityDiffuse);
         let intensityR = intensityDiffuse * pointLight.color.r;
         let intensityG = intensityDiffuse * pointLight.color.g;
         let intensityB = intensityDiffuse * pointLight.color.b;

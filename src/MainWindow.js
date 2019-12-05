@@ -43,8 +43,6 @@ class MainWindow {
 
         // Objects for ray intersection detection
         this.objects = [];
-        this.metaballs = new Metaballs(new Lambert(new THREE.Color(1.0, 1.0, 1.0)));
-        this.objects.push(this.metaballs);
 
         // Bounding Box Visualizations for triangle-ray intersection
         this.boundingBoxes = new THREE.Scene();

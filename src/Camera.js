@@ -106,10 +106,6 @@ class Camera {
                         intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize());
                     }
 
-                    if (node instanceof Metaballs) {
-                        intersectInfo = node.getIntersectionInformation(rayOrigin.clone(), rayDirection.clone().normalize(), farFrustum);
-                    }
-
                     // Update nearest intersection if necessary 
                     if (nearestIntersectInfo.distance > intersectInfo.distance && intersectInfo.distance > thisInstance.nearFrustum) {
                         nearestIntersectInfo = intersectInfo;
